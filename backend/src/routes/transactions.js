@@ -7,7 +7,7 @@ const prisma = require('../prisma');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ dest: 'uploads/' });
 
 router.use(auth);
 
@@ -62,18 +62,49 @@ router.get('/transactions', async (req, res, next) => {
 
 router.post('/transactions',
   body('date').isISO8601().toDate(),
-  body('amount').isFloat(),
+  body('amount').optional().isFloat(),
   body('description').optional().isString(),
   body('categoryId').optional().isInt(),
   body('cardId').optional().isInt(),
   body('installments').optional().isInt({ min: 1 }),
   body('installmentIndex').optional().isInt({ min: 1 }),
+  body('splits').optional().isArray(),
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-      const data = { ...req.body, userId: req.user.id, amount: Number(req.body.amount) };
+
+      const { splits, ...transactionData } = req.body;
+      let totalAmount = 0;
+
+      if (splits && splits.length > 0) {
+        // Calculate total amount from splits
+        totalAmount = splits.reduce((sum, split) => sum + Number(split.amount), 0);
+      } else {
+        totalAmount = Number(req.body.amount);
+      }
+
+      const data = {
+        ...transactionData,
+        userId: req.user.id,
+        amount: totalAmount,
+      };
+
       const created = await prisma.transaction.create({ data });
+
+      if (splits && splits.length > 0) {
+        for (const split of splits) {
+          await prisma.splitTransaction.create({
+            data: {
+              transactionId: created.id,
+              categoryId: Number(split.categoryId),
+              amount: Number(split.amount),
+              description: split.description,
+            },
+          });
+        }
+      }
+
       res.status(201).json(created);
     } catch (e) { next(e); }
   }
@@ -82,14 +113,47 @@ router.post('/transactions',
 router.put('/transactions/:id',
   body('date').optional().isISO8601().toDate(),
   body('amount').optional().isFloat(),
+  body('splits').optional().isArray(),
   async (req, res, next) => {
     try {
       const id = Number(req.params.id);
       const tx = await prisma.transaction.findFirst({ where: { id, userId: req.user.id } });
       if (!tx) return res.status(404).json({ error: 'Transação não encontrada' });
-      const data = { ...req.body };
-      if (data.amount != null) data.amount = Number(data.amount);
+
+      const { splits, ...transactionData } = req.body;
+      let totalAmount = 0;
+
+      if (splits && splits.length > 0) {
+        totalAmount = splits.reduce((sum, split) => sum + Number(split.amount), 0);
+      } else if (req.body.amount) {
+        totalAmount = Number(req.body.amount);
+      } else {
+        totalAmount = tx.amount;
+      }
+
+      const data = {
+        ...transactionData,
+        amount: totalAmount,
+      };
+
       const updated = await prisma.transaction.update({ where: { id }, data });
+
+      if (splits) {
+        await prisma.splitTransaction.deleteMany({ where: { transactionId: id } });
+        if (splits.length > 0) {
+          for (const split of splits) {
+            await prisma.splitTransaction.create({
+              data: {
+                transactionId: id,
+                categoryId: Number(split.categoryId),
+                amount: Number(split.amount),
+                description: split.description,
+              },
+            });
+          }
+        }
+      }
+
       res.json(updated);
     } catch (e) { next(e); }
   }
@@ -103,6 +167,26 @@ router.delete('/transactions/:id', async (req, res, next) => {
     await prisma.transaction.delete({ where: { id } });
     res.json({ success: true });
   } catch (e) { next(e); }
+});
+
+router.post('/transactions/:id/upload-receipt', upload.single('receipt'), async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        const tx = await prisma.transaction.findFirst({ where: { id, userId: req.user.id } });
+        if (!tx) return res.status(404).json({ error: 'Transação não encontrada' });
+
+        if (!req.file) return res.status(400).json({ error: 'Arquivo ausente (campo: receipt)' });
+
+        const receiptUrl = `/uploads/${req.file.filename}`;
+        const updated = await prisma.transaction.update({
+            where: { id },
+            data: { receiptUrl },
+        });
+
+        res.json(updated);
+    } catch (e) {
+        next(e);
+    }
 });
 
 /**
@@ -131,42 +215,60 @@ router.post('/transactions/import', upload.single('file'), async (req, res, next
         .on('end', resolve);
     });
 
-    let imported = 0;
-    for (const r of rows) {
-      const dateStr = r[headers.date];
-      const amountStr = r[headers.amount];
-      if (!dateStr || !amountStr) continue;
-      const date = new Date(dateStr);
-      const amount = Number(String(amountStr).replace(',','.'));
-      const description = r[headers.description] || null;
-      const cardName = r[headers.cardName] || null;
-      const categoryName = r[headers.category] || null;
-
-      let cardId = null;
-      if (cardName) {
-        let card = await prisma.card.findFirst({ where: { userId: req.user.id, name: cardName } });
-        if (!card) {
-          card = await prisma.card.create({ data: { userId: req.user.id, name: cardName, limit: 0, closeDay: 1, dueDay: 10 } });
+    const successes = [];
+    const errors = [];
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const lineNumber = i + 2; // Assuming headers are on line 1
+      try {
+        const dateStr = r[headers.date];
+        const amountStr = r[headers.amount];
+        if (!dateStr || !amountStr) {
+          errors.push({ line: lineNumber, error: 'Data ou valor ausentes' });
+          continue;
         }
-        cardId = card.id;
-      }
-
-      let categoryId = null;
-      if (categoryName) {
-        let cat = await prisma.category.findFirst({ where: { userId: req.user.id, name: categoryName } });
-        if (!cat) {
-          cat = await prisma.category.create({ data: { userId: req.user.id, name: categoryName } });
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+          errors.push({ line: lineNumber, error: `Data inválida: ${dateStr}` });
+          continue;
         }
-        categoryId = cat.id;
-      }
+        const amount = Number(String(amountStr).replace(',', '.'));
+        if (isNaN(amount)) {
+            errors.push({ line: lineNumber, error: `Valor inválido: ${amountStr}` });
+            continue;
+        }
+        const description = r[headers.description] || null;
+        const cardName = r[headers.cardName] || null;
+        const categoryName = r[headers.category] || null;
 
-      await prisma.transaction.create({
-        data: { userId: req.user.id, cardId, categoryId, date, amount, description }
-      });
-      imported++;
+        let cardId = null;
+        if (cardName) {
+          let card = await prisma.card.findFirst({ where: { userId: req.user.id, name: cardName } });
+          if (!card) {
+            card = await prisma.card.create({ data: { userId: req.user.id, name: cardName, limit: 0, closeDay: 1, dueDay: 10 } });
+          }
+          cardId = card.id;
+        }
+
+        let categoryId = null;
+        if (categoryName) {
+          let cat = await prisma.category.findFirst({ where: { userId: req.user.id, name: categoryName } });
+          if (!cat) {
+            cat = await prisma.category.create({ data: { userId: req.user.id, name: categoryName } });
+          }
+          categoryId = cat.id;
+        }
+
+        const newTx = await prisma.transaction.create({
+          data: { userId: req.user.id, cardId, categoryId, date, amount, description }
+        });
+        successes.push(newTx);
+      } catch (e) {
+        errors.push({ line: lineNumber, error: e.message });
+      }
     }
 
-    res.json({ imported });
+    res.json({ successes: successes.length, errors });
   } catch (e) { next(e); }
 });
 

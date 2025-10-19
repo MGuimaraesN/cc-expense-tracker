@@ -9,6 +9,7 @@ import Transactions from './pages/Transactions'
 import Cards from './pages/Cards'
 import Categories from './pages/Categories'
 import Budgets from './pages/Budgets'
+import RecurringTransactions from './pages/RecurringTransactions'
 
 function RequireAuth({ children }) {
   const { user } = useAuth()
@@ -27,6 +28,7 @@ function AppRoutes() {
       <Route path="/app/cards" element={<RequireAuth><Layout><Cards /></Layout></RequireAuth>} />
       <Route path="/app/categories" element={<RequireAuth><Layout><Categories /></Layout></RequireAuth>} />
       <Route path="/app/budgets" element={<RequireAuth><Layout><Budgets /></Layout></RequireAuth>} />
+      <Route path="/app/recurring-transactions" element={<RequireAuth><Layout><RecurringTransactions /></Layout></RequireAuth>} />
       <Route path="*" element={<Navigate to="/app" />} />
     </Routes>
   )
