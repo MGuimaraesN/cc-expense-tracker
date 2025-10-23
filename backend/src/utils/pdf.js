@@ -1,20 +1,32 @@
 const PDFDocument = require('pdfkit');
 
-async function buildMonthlyReportPdf(res, user, period, transactions, totals) {
+async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
   const doc = new PDFDocument({ margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="relatorio_${period.year}_${String(period.month).padStart(2,'0')}.pdf"`);
+  res.setHeader('Content-Disposition', `attachment; filename="relatorio_${period.year}_${String(period.month).padStart(2, '0')}.pdf"`);
   doc.pipe(res);
 
   doc.fontSize(18).text('Relatório Mensal de Gastos', { align: 'center' });
   doc.moveDown(0.5);
   doc.fontSize(12).text(`Usuário: ${user.name} (${user.email})`);
-  doc.text(`Período: ${String(period.month).padStart(2,'0')}/${period.year}`);
+  doc.text(`Período: ${String(period.month).padStart(2, '0')}/${period.year}`);
   doc.text(`Gerado em: ${new Date().toLocaleString()}`);
   doc.moveDown();
 
   doc.fontSize(14).text('Resumo', { underline: true });
-  doc.fontSize(12).text(`Total do mês: R$ ${totals.total.toFixed(2)}`);
+  doc.fontSize(12).text(`Total do mês: R$ ${summary.total.toFixed(2)}`);
+  doc.moveDown();
+
+  doc.fontSize(14).text('Gastos por Categoria', { underline: true });
+  summary.byCategory.forEach(cat => {
+    doc.fontSize(10).text(`${cat.name}: R$ ${cat.amount.toFixed(2)}`);
+  });
+  doc.moveDown();
+
+  doc.fontSize(14).text('Gastos por Cartão', { underline: true });
+  summary.byCard.forEach(card => {
+    doc.fontSize(10).text(`${card.name}: R$ ${card.amount.toFixed(2)}`);
+  });
   doc.moveDown();
 
   doc.fontSize(14).text('Transações', { underline: true });

@@ -36,7 +36,7 @@ export default function Budgets() {
 
   return (
     <div className="space-y-4">
-      <Card title="Novo Orçamento">
+      <Card title="Novo Orçamento" className="relative z-20">
         <form onSubmit={submit} className="grid md:grid-cols-5 gap-2">
           <select value={form.categoryId} onChange={e=>setForm({...form, categoryId:e.target.value})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1">
             <option value="">Categoria</option>

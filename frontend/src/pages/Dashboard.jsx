@@ -28,6 +28,23 @@ export default function Dashboard() {
 
   const budgetExceeded = (summary?.budgetStatus || []).filter(b => b.exceeded)
 
+  const handleExport = async (format) => {
+    const url = `/reports/monthly?month=${month}&year=${year}&format=${format}`;
+    try {
+      const response = await api.get(url, { responseType: 'blob' });
+      const fileURL = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = fileURL;
+      link.download = `relatorio_${year}_${month}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(fileURL);
+    } catch (error) {
+      console.error('Error exporting file:', error);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -50,8 +67,8 @@ export default function Dashboard() {
         </Card>
         <Card title="Ações">
           <div className="flex gap-2">
-            <a href={`${import.meta.env.VITE_API_URL}/reports/monthly?month=${month}&year=${year}&format=csv`} target="_blank" className="underline text-blue-400">Exportar CSV</a>
-            <a href={`${import.meta.env.VITE_API_URL}/reports/monthly?month=${month}&year=${year}&format=pdf`} target="_blank" className="underline text-blue-400">Exportar PDF</a>
+            <Button onClick={() => handleExport('csv')}>Exportar CSV</Button>
+            <Button onClick={() => handleExport('pdf')}>Exportar PDF</Button>
           </div>
         </Card>
       </div>
@@ -71,12 +88,12 @@ export default function Dashboard() {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={summary?.byCard || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+                <CartesianGrid strokeDasharray="3 3" stroke="#9ca3af" />
+                <XAxis dataKey="name" stroke="#9ca3af" />
+                <YAxis stroke="#9ca3af" />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="amount" name="Valor" />
+                <Bar dataKey="amount" name="Valor" fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
           </div>
