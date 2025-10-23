@@ -7,17 +7,19 @@ services:
     environment:
       - PORT=4000
       - JWT_SECRET=supersecretjwt
-      - DATABASE_URL=file:./dev.db
+      - DATABASE_URL=file:./prisma/dev.db
       - CORS_ORIGIN=http://localhost:5173
     volumes:
       - ./backend/prisma:/app/prisma
-      - backend_db:/app/prisma
-    command: sh -c "npx prisma migrate deploy && node src/index.js"
+    command: sh -c "echo '--- Sincronizando Schema (db push) ---' && 
+                    npx prisma db push --accept-data-loss && 
+                    echo '--- Populando Banco (db seed) ---' && 
+                    npx prisma db seed && 
+                    echo '--- Iniciando Aplicação ---' && 
+                    node src/index.js"
   frontend:
     build: ./frontend
     ports:
       - "5173:80"
     depends_on:
       - backend
-volumes:
-  backend_db:
