@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id            Int           @id @default(autoincrement())
-  name          String
-  email         String        @unique
-  passwordHash  String
-  createdAt     DateTime      @default(now())
-  cards         Card[]
-  categories    Category[]
-  transactions  Transaction[]
-  budgets       Budget[]
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  email                 String                 @unique
+  passwordHash          String
+  createdAt             DateTime               @default(now())
+  cards                 Card[]
+  categories            Category[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
 }
 
 model Card {
@@ -27,8 +28,9 @@ model Card {
   limit      Float         @default(0)
   closeDay   Int           @default(1)
   dueDay     Int           @default(10)
-  createdAt  DateTime      @default(now())
-  transactions Transaction[]
+  createdAt             DateTime               @default(now())
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
   @@index([userId, name])
 }
 
@@ -37,9 +39,11 @@ model Category {
   user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     Int
   name       String
-  createdAt  DateTime      @default(now())
-  transactions Transaction[]
-  budgets    Budget[]
+  createdAt             DateTime               @default(now())
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+  budgets               Budget[]
+  splitTransactions     SplitTransaction[]
   @@index([userId, name])
 }
 
@@ -54,10 +58,24 @@ model Transaction {
   date             DateTime
   amount           Float
   description      String?
-  installments     Int       @default(1)
-  installmentIndex Int       @default(1)
-  createdAt        DateTime  @default(now())
+  installments           Int                     @default(1)
+  installmentIndex       Int                     @default(1)
+  createdAt              DateTime                @default(now())
+  recurringTransaction   RecurringTransaction?   @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+  recurringTransactionId Int?
+  splits                 SplitTransaction[]
+  receiptUrl             String?
   @@index([userId, date])
+}
+
+model SplitTransaction {
+  id            Int       @id @default(autoincrement())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId Int
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId    Int
+  amount        Float
+  description   String?
 }
 
 model Budget {
@@ -71,4 +89,22 @@ model Budget {
   amount     Float
   createdAt  DateTime  @default(now())
   @@unique([userId, categoryId, month, year])
+}
+
+model RecurringTransaction {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  card        Card?     @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  cardId      Int?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId  Int?
+  startDate   DateTime
+  endDate     DateTime?
+  amount      Float
+  description String?
+  frequency    String        // e.g., 'daily', 'weekly', 'monthly', 'yearly'
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+  @@index([userId, startDate])
 }

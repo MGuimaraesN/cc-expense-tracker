@@ -41,6 +41,7 @@ export default function Layout({ children }) {
             <NavLink to="/app/cards" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}>Cartões</NavLink>
             <NavLink to="/app/categories" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}>Categorias</NavLink>
             <NavLink to="/app/budgets" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}>Orçamentos</NavLink>
+            <NavLink to="/app/recurring-transactions" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}>Transações Recorrentes</NavLink>
           </nav>
         </aside>
         <main className="flex-1 py-4 pl-4">

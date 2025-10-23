@@ -14,6 +14,12 @@ export default function Transactions() {
   const [categories, setCategories] = useState([])
   const [filters, setFilters] = useState({ startDate: '', endDate: '', cardId: '', categoryId: '' })
   const [form, setForm] = useState({ date: new Date().toISOString().slice(0,10), amount: 0, description: '', cardId:'', categoryId:'', installments:1, installmentIndex:1 })
+  const [splits, setSplits] = useState([]);
+  const [isSplit, setIsSplit] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importPreview, setImportPreview] = useState([]);
+  const [importReport, setImportReport] = useState(null);
 
   const load = async () => {
     const params = { page, pageSize, ...filters }
@@ -30,17 +36,50 @@ export default function Transactions() {
   useEffect(() => { load() }, [page, pageSize, filters])
 
   const submit = async (e) => {
-    e.preventDefault()
-    const payload = { ...form }
-    if (payload.cardId === '') delete payload.cardId
-    else payload.cardId = Number(payload.cardId)
-    if (payload.categoryId === '') delete payload.categoryId
-    else payload.categoryId = Number(payload.categoryId)
-    payload.amount = Number(payload.amount)
-    await api.post('/transactions', payload)
-    setForm({ ...form, amount: 0, description:'' })
-    await load()
-  }
+    e.preventDefault();
+    const payload = { ...form };
+    if (payload.cardId === '') delete payload.cardId;
+    else payload.cardId = Number(payload.cardId);
+
+    if (isSplit) {
+      if (splits.length === 0) {
+        alert('Adicione pelo menos uma divisão');
+        return;
+      }
+      const totalAmount = splits.reduce((sum, split) => sum + Number(split.amount), 0);
+      if (totalAmount !== Number(form.amount)) {
+        alert('A soma das divisões deve ser igual ao valor total');
+        return;
+      }
+      payload.splits = splits;
+    } else {
+        if (payload.categoryId === '') delete payload.categoryId;
+        else payload.categoryId = Number(payload.categoryId);
+    }
+
+    payload.amount = Number(payload.amount);
+    await api.post('/transactions', payload);
+    setForm({ ...form, amount: 0, description: '' });
+    setSplits([]);
+    setIsSplit(false);
+    await load();
+  };
+
+  const uploadReceipt = async (id, file) => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('receipt', file);
+
+    try {
+      await api.post(`/transactions/${id}/upload-receipt`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      load();
+    } catch (error) {
+      console.error('Error uploading receipt:', error);
+    }
+  };
 
   const del = async (id) => {
     if (confirm('Excluir transação?')) {
@@ -49,15 +88,43 @@ export default function Transactions() {
     }
   }
 
-  const importCsv = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const formData = new FormData()
-    formData.append('file', file)
-    await api.post('/transactions/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-    e.target.value = ''
-    await load()
-  }
+  const openImportModal = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportFile(file);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const lines = text.split('\n').slice(0, 5);
+      setImportPreview(lines);
+    };
+    reader.readAsText(file);
+
+    setImportModalOpen(true);
+    e.target.value = '';
+  };
+
+  const handleImport = async () => {
+    if (!importFile) return;
+
+    const formData = new FormData();
+    formData.append('file', importFile);
+
+    try {
+      const { data } = await api.post('/transactions/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportReport(data);
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      setImportReport({ successes: 0, errors: [{ line: 'N/A', error: 'An unexpected error occurred.' }] });
+    } finally {
+        setImportModalOpen(false);
+        load();
+    }
+  };
 
   const exportCsv = () => {
     const url = new URL(`${import.meta.env.VITE_API_URL}/reports/monthly`)
@@ -94,17 +161,112 @@ export default function Transactions() {
           </select>
           <input type="number" min="1" value={form.installments} onChange={e=>setForm({...form, installments:Number(e.target.value)})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" title="Parcelas" />
           <input type="number" min="1" value={form.installmentIndex} onChange={e=>setForm({...form, installmentIndex:Number(e.target.value)})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" title="Parcela atual" />
+
+          {isSplit && (
+            <div className="md:col-span-7 space-y-2">
+              {splits.map((split, index) => (
+                <div key={index} className="grid grid-cols-3 gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Valor"
+                    value={split.amount}
+                    onChange={(e) => {
+                      const newSplits = [...splits];
+                      newSplits[index].amount = e.target.value;
+                      setSplits(newSplits);
+                    }}
+                    className="bg-white/5 border border-white/10 text-white rounded px-2 py-1"
+                  />
+                  <select
+                    value={split.categoryId}
+                    onChange={(e) => {
+                      const newSplits = [...splits];
+                      newSplits[index].categoryId = e.target.value;
+                      setSplits(newSplits);
+                    }}
+                    className="bg-white/5 border border-white/10 text-white rounded px-2 py-1"
+                  >
+                    <option value="">Categoria</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const newSplits = splits.filter((_, i) => i !== index);
+                      setSplits(newSplits);
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Remover
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                onClick={() => setSplits([...splits, { amount: '', categoryId: '' }])}
+              >
+                Adicionar Divisão
+              </Button>
+            </div>
+          )}
+
           <div className="md:col-span-7">
             <Button>Adicionar</Button>
+            <Button
+                type="button"
+                onClick={() => setIsSplit(!isSplit)}
+                className="ml-2 bg-slate-600 hover:bg-slate-700"
+            >
+                {isSplit ? 'Cancelar Divisão' : 'Dividir Transação'}
+            </Button>
             <label className="ml-3 cursor-pointer">
               <span className="px-3 py-2 rounded bg-slate-600 hover:bg-slate-700 text-white text-sm">Importar CSV</span>
-              <input type="file" className="hidden" accept=".csv" onChange={importCsv} />
+              <input type="file" className="hidden" accept=".csv" onChange={openImportModal} />
             </label>
             <Button className="ml-2 bg-slate-600 hover:bg-slate-700" type="button" onClick={exportCsv}>Exportar CSV</Button>
             <Button className="ml-2 bg-slate-600 hover:bg-slate-700" type="button" onClick={exportPdf}>Exportar PDF</Button>
           </div>
         </form>
       </Card>
+
+      {importModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-xl w-full max-w-lg">
+            <h2 className="text-xl font-bold mb-4">Pré-visualização do CSV</h2>
+            <div className="bg-slate-900 p-4 rounded-md mb-4 whitespace-pre-wrap font-mono text-sm">
+              {importPreview.join('\n')}
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => setImportModalOpen(false)} className="bg-slate-600 hover:bg-slate-700 mr-2">
+                Cancelar
+              </Button>
+              <Button onClick={handleImport}>Confirmar Importação</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {importReport && (
+        <Card title="Relatório de Importação">
+          <p>Sucessos: {importReport.successes}</p>
+          {importReport.errors.length > 0 && (
+            <div>
+              <p>Erros:</p>
+              <ul className="list-disc list-inside text-red-400">
+                {importReport.errors.map((err, index) => (
+                  <li key={index}>Linha {err.line}: {err.error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <Button onClick={() => setImportReport(null)} className="mt-4">Fechar</Button>
+        </Card>
+      )}
 
       <Card title="Filtros">
         <div className="grid md:grid-cols-6 gap-2">
@@ -139,7 +301,15 @@ export default function Transactions() {
                 <td>{t.cardName || '-'}</td>
                 <td className="text-right">{fmtCurrency(t.amount)}</td>
                 <td className="text-right">
-                  <Button className="bg-red-600 hover:bg-red-700" onClick={()=>del(t.id)}>Excluir</Button>
+                    <label className="cursor-pointer">
+                        <span className="px-2 py-1 rounded bg-slate-600 hover:bg-slate-700 text-white text-xs">Anexar</span>
+                        <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => uploadReceipt(t.id, e.target.files[0])}
+                        />
+                    </label>
+                  <Button className="bg-red-600 hover:bg-red-700 ml-2" onClick={()=>del(t.id)}>Excluir</Button>
                 </td>
               </tr>
             ))}
