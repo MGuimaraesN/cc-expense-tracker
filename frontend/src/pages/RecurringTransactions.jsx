@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Edit, Trash } from 'lucide-react';
-import Layout from '../components/Layout';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Modal from '../components/Modal';
 import { getRecurringTransactions, createRecurringTransaction, updateRecurringTransaction, deleteRecurringTransaction } from '../api/recurring-transactions'; // Assuming you'll create this API file
 
 const RecurringTransactions = () => {
@@ -64,55 +65,43 @@ const RecurringTransactions = () => {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Recurring Transactions</h1>
-          <button
-            onClick={() => handleOpenModal()}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center"
-          >
-            <PlusCircle className="mr-2" /> New Recurring Transaction
-          </button>
-        </div>
+    <div className="space-y-4">
+      <Card title="Nova Transação Recorrente">
+        <Button onClick={() => handleOpenModal()}>Nova Transação</Button>
+      </Card>
 
-        {isLoading && <p>Loading...</p>}
-        {error && <p className="text-red-500">{error}</p>}
+      {isLoading && <p>Loading...</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
-        {!isLoading && !error && (
-          <div className="bg-white shadow rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      {!isLoading && !error && (
+        <Card title="Transações Recorrentes">
+          <table className="w-full text-sm">
+            <thead className="text-white/60">
+              <tr>
+                <th className="text-left">Descrição</th>
+                <th className="text-left">Valor</th>
+                <th className="text-left">Frequência</th>
+                <th className="text-left">Data de Início</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {recurringTransactions.map((tx) => (
+                <tr key={tx.id} className="border-t border-white/10">
+                  <td>{tx.description}</td>
+                  <td>{tx.amount}</td>
+                  <td>{tx.frequency}</td>
+                  <td>{new Date(tx.startDate).toLocaleDateString()}</td>
+                  <td className="text-right">
+                    <Button onClick={() => handleOpenModal(tx)} className="bg-slate-600 hover:bg-slate-700 mr-2">Editar</Button>
+                    <Button onClick={() => handleDelete(tx.id)} className="bg-red-600 hover:bg-red-700">Excluir</Button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recurringTransactions.map((tx) => (
-                  <tr key={tx.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{tx.description}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{tx.amount}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{tx.frequency}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{new Date(tx.startDate).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button onClick={() => handleOpenModal(tx)} className="text-blue-500 hover:text-blue-700 mr-2">
-                        <Edit />
-                      </button>
-                      <button onClick={() => handleDelete(tx.id)} className="text-red-500 hover:text-red-700">
-                        <Trash />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
 
       {isModalOpen && (
         <RecurringTransactionModal
@@ -121,7 +110,7 @@ const RecurringTransactions = () => {
           onSave={handleSave}
         />
       )}
-    </Layout>
+    </div>
   );
 };
 
@@ -146,38 +135,23 @@ const RecurringTransactionModal = ({ transaction, onClose, onSave }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-                <h2 className="text-xl font-bold mb-4">{transaction ? 'Edit' : 'New'} Recurring Transaction</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-                        <input type="text" name="description" id="description" value={formData.description} onChange={handleChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount</label>
-                        <input type="number" name="amount" id="amount" value={formData.amount} onChange={handleChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="frequency" className="block text-sm font-medium text-gray-700">Frequency</label>
-                        <select name="frequency" id="frequency" value={formData.frequency} onChange={handleChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start Date</label>
-                        <input type="date" name="startDate" id="startDate" value={formData.startDate} onChange={handleChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
-                    </div>
-                    <div className="flex justify-end">
-                        <button type="button" onClick={onClose} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md mr-2">Cancel</button>
-                        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">Save</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        <Modal title={transaction ? 'Editar Transação Recorrente' : 'Nova Transação Recorrente'} onClose={onClose}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <input type="text" name="description" placeholder="Descrição" value={formData.description} onChange={handleChange} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1 w-full" required />
+                <input type="number" name="amount" placeholder="Valor" value={formData.amount} onChange={handleChange} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1 w-full" required />
+                <select name="frequency" value={formData.frequency} onChange={handleChange} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1 w-full">
+                    <option value="daily">Diário</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                    <option value="yearly">Anual</option>
+                </select>
+                <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1 w-full" required />
+                <div className="flex justify-end">
+                    <Button type="button" onClick={onClose} className="bg-slate-600 hover:bg-slate-700 mr-2">Cancelar</Button>
+                    <Button type="submit">Salvar</Button>
+                </div>
+            </form>
+        </Modal>
     );
 }
 

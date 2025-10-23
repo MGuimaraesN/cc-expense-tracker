@@ -28,6 +28,7 @@ model Card {
   limit      Float         @default(0)
   closeDay   Int           @default(1)
   dueDay     Int           @default(10)
+  iconUrl    String?
   createdAt             DateTime               @default(now())
   transactions          Transaction[]
   recurringTransactions RecurringTransaction[]

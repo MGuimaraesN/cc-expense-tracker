@@ -14,6 +14,7 @@ export default function Transactions() {
   const [categories, setCategories] = useState([])
   const [filters, setFilters] = useState({ startDate: '', endDate: '', cardId: '', categoryId: '' })
   const [form, setForm] = useState({ date: new Date().toISOString().slice(0,10), amount: 0, description: '', cardId:'', categoryId:'', installments:1, installmentIndex:1 })
+  const [editing, setEditing] = useState(null)
   const [splits, setSplits] = useState([]);
   const [isSplit, setIsSplit] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -58,7 +59,11 @@ export default function Transactions() {
     }
 
     payload.amount = Number(payload.amount);
-    await api.post('/transactions', payload);
+    if (editing) {
+      await api.put(`/transactions/${editing.id}`, payload);
+    } else {
+      await api.post('/transactions', payload);
+    }
     setForm({ ...form, amount: 0, description: '' });
     setSplits([]);
     setIsSplit(false);
@@ -86,6 +91,19 @@ export default function Transactions() {
       await api.delete(`/transactions/${id}`)
       await load()
     }
+  }
+
+  const edit = (t) => {
+    setEditing(t)
+    setForm({
+      date: fmtDate(t.date, 'yyyy-mm-dd'),
+      amount: t.amount,
+      description: t.description,
+      cardId: t.cardId,
+      categoryId: t.categoryId,
+      installments: t.installments,
+      installmentIndex: t.installmentIndex,
+    })
   }
 
   const openImportModal = (e) => {
@@ -146,7 +164,7 @@ export default function Transactions() {
 
   return (
     <div className="space-y-4">
-      <Card title="Nova Transação">
+      <Card title={editing ? 'Editar Transação' : 'Nova Transação'}>
         <form onSubmit={submit} className="grid md:grid-cols-7 gap-2">
           <input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
           <input type="number" step="0.01" placeholder="Valor" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
@@ -216,7 +234,8 @@ export default function Transactions() {
           )}
 
           <div className="md:col-span-7">
-            <Button>Adicionar</Button>
+            <Button>{editing ? 'Atualizar' : 'Adicionar'}</Button>
+            {editing && <Button className="ml-2 bg-slate-600 hover:bg-slate-700" onClick={()=>{ setEditing(null); setForm({ date: new Date().toISOString().slice(0,10), amount: 0, description: '', cardId:'', categoryId:'', installments:1, installmentIndex:1 }) }} type="button">Cancelar</Button>}
             <Button
                 type="button"
                 onClick={() => setIsSplit(!isSplit)}
@@ -268,7 +287,7 @@ export default function Transactions() {
         </Card>
       )}
 
-      <Card title="Filtros">
+      <Card title="Filtros" className="relative z-10">
         <div className="grid md:grid-cols-6 gap-2">
           <input type="date" value={filters.startDate} onChange={e=>setFilters({...filters, startDate:e.target.value})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
           <input type="date" value={filters.endDate} onChange={e=>setFilters({...filters, endDate:e.target.value})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
@@ -309,6 +328,7 @@ export default function Transactions() {
                             onChange={(e) => uploadReceipt(t.id, e.target.files[0])}
                         />
                     </label>
+                  <Button className="bg-slate-600 hover:bg-slate-700 ml-2" onClick={()=>edit(t)}>Editar</Button>
                   <Button className="bg-red-600 hover:bg-red-700 ml-2" onClick={()=>del(t.id)}>Excluir</Button>
                 </td>
               </tr>
