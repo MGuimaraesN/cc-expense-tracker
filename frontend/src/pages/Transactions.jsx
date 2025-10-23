@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import api from '../api/client'
 import Card from '../components/Card'
 import Button from '../components/Button'
+import Notification from '../components/Notification'
 import { fmtCurrency, fmtDate } from '../utils/format'
 
 export default function Transactions() {
@@ -17,6 +18,8 @@ export default function Transactions() {
   const [editing, setEditing] = useState(null)
   const [splits, setSplits] = useState([]);
   const [isSplit, setIsSplit] = useState(false);
+  const [loading, setLoading] = useState(false)
+  const [notification, setNotification] = useState({ message: '', type: '' })
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importPreview, setImportPreview] = useState([]);
@@ -38,6 +41,7 @@ export default function Transactions() {
 
   const submit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const payload = { ...form };
     if (payload.cardId === '') delete payload.cardId;
     else payload.cardId = Number(payload.cardId);
@@ -59,15 +63,19 @@ export default function Transactions() {
     }
 
     payload.amount = Number(payload.amount);
-    if (editing) {
-      await api.put(`/transactions/${editing.id}`, payload);
-    } else {
-      await api.post('/transactions', payload);
+    try {
+      if (editing) {
+        await api.put(`/transactions/${editing.id}`, payload);
+      } else {
+        await api.post('/transactions', payload);
+      }
+      setForm({ ...form, amount: 0, description: '' });
+      setSplits([]);
+      setIsSplit(false);
+      await load();
+    } finally {
+      setLoading(false);
     }
-    setForm({ ...form, amount: 0, description: '' });
-    setSplits([]);
-    setIsSplit(false);
-    await load();
   };
 
   const uploadReceipt = async (id, file) => {
@@ -87,9 +95,12 @@ export default function Transactions() {
   };
 
   const del = async (id) => {
-    if (confirm('Excluir transação?')) {
+    try {
       await api.delete(`/transactions/${id}`)
+      setNotification({ message: 'Transação excluída com sucesso!', type: 'success' })
       await load()
+    } catch (error) {
+      setNotification({ message: 'Erro ao excluir transação.', type: 'error' })
     }
   }
 
@@ -164,6 +175,11 @@ export default function Transactions() {
 
   return (
     <div className="space-y-4">
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        onClose={() => setNotification({ message: '', type: '' })}
+      />
       <Card title={editing ? 'Editar Transação' : 'Nova Transação'}>
         <form onSubmit={submit} className="grid md:grid-cols-7 gap-2">
           <input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
@@ -234,7 +250,7 @@ export default function Transactions() {
           )}
 
           <div className="md:col-span-7">
-            <Button>{editing ? 'Atualizar' : 'Adicionar'}</Button>
+            <Button disabled={loading}>{loading ? 'Salvando...' : (editing ? 'Atualizar' : 'Adicionar')}</Button>
             {editing && <Button className="ml-2 bg-slate-600 hover:bg-slate-700" onClick={()=>{ setEditing(null); setForm({ date: new Date().toISOString().slice(0,10), amount: 0, description: '', cardId:'', categoryId:'', installments:1, installmentIndex:1 }) }} type="button">Cancelar</Button>}
             <Button
                 type="button"
