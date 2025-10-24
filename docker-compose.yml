@@ -1,5 +1,6 @@
 services:
   api:
+    container_name: api
     build: ./backend
     ports:
       - "4000:4000"
@@ -17,6 +18,7 @@ services:
                     echo '--- Iniciando Aplicação ---' && 
                     node src/index.js"
   web:
+    container_name: web
     build: ./frontend
     ports:
       - "5173:80"
