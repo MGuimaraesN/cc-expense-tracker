@@ -36,25 +36,25 @@ export default function Budgets() {
 
   return (
     <div className="space-y-4">
-      <Card title="Novo Orçamento">
+      <Card title="Novo Orçamento" className="relative z-20">
         <form onSubmit={submit} className="grid md:grid-cols-5 gap-2">
-          <select value={form.categoryId} onChange={e=>setForm({...form, categoryId:e.target.value})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1">
+          <select value={form.categoryId} onChange={e=>setForm({...form, categoryId:e.target.value})} className="custom-select">
             <option value="">Categoria</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <input type="number" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})} placeholder="Valor" className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
-          <input type="number" value={form.month} onChange={e=>setForm({...form, month:Number(e.target.value)})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
-          <input type="number" value={form.year} onChange={e=>setForm({...form, year:Number(e.target.value)})} className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" />
+          <input type="number" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})} placeholder="Valor" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
+          <input type="number" value={form.month} onChange={e=>setForm({...form, month:Number(e.target.value)})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
+          <input type="number" value={form.year} onChange={e=>setForm({...form, year:Number(e.target.value)})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
           <Button>Salvar</Button>
         </form>
       </Card>
 
       <Card title="Orçamentos">
         <table className="w-full text-sm">
-          <thead className="text-white/60"><tr><th>Categoria</th><th>Mês</th><th>Ano</th><th>Valor</th><th></th></tr></thead>
+          <thead className="text-gray-500 dark:text-white/60"><tr><th>Categoria</th><th>Mês</th><th>Ano</th><th>Valor</th><th></th></tr></thead>
           <tbody>
           {items.map(b => (
-            <tr key={b.id} className="border-t border-white/10">
+            <tr key={b.id} className="border-t border-gray-200 dark:border-white/10">
               <td>{b.categoryName}</td>
               <td className="text-center">{String(b.month).padStart(2,'0')}</td>
               <td className="text-center">{b.year}</td>

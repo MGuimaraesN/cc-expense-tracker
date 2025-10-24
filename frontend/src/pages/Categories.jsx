@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react'
 import api from '../api/client'
 import Card from '../components/Card'
 import Button from '../components/Button'
+import Notification from '../components/Notification'
 
 export default function Categories() {
   const [items, setItems] = useState([])
   const [name, setName] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [notification, setNotification] = useState({ message: '', type: '' })
 
   const load = async () => {
     const { data } = await api.get('/categories')
@@ -15,9 +18,14 @@ export default function Categories() {
 
   const add = async (e) => {
     e.preventDefault()
-    await api.post('/categories', { name })
-    setName('')
-    await load()
+    setLoading(true)
+    try {
+      await api.post('/categories', { name })
+      setName('')
+      await load()
+    } finally {
+      setLoading(false)
+    }
   }
 
   const update = async (it) => {
@@ -28,18 +36,26 @@ export default function Categories() {
   }
 
   const del = async (id) => {
-    if (confirm('Excluir categoria?')) {
+    try {
       await api.delete(`/categories/${id}`)
+      setNotification({ message: 'Categoria excluída com sucesso!', type: 'success' })
       await load()
+    } catch (error) {
+      setNotification({ message: 'Erro ao excluir categoria.', type: 'error' })
     }
   }
 
   return (
     <div className="space-y-4">
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        onClose={() => setNotification({ message: '', type: '' })}
+      />
       <Card title="Nova Categoria">
         <form onSubmit={add} className="flex gap-2">
           <input placeholder="Nome" className="bg-white/5 border border-white/10 text-white rounded px-2 py-1" value={name} onChange={e=>setName(e.target.value)} />
-          <Button>Adicionar</Button>
+          <Button disabled={loading}>{loading ? 'Adicionando...' : 'Adicionar'}</Button>
         </form>
       </Card>
 

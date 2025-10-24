@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import api from '../api/client'
+import { jwtDecode } from 'jwt-decode'
 
 const AuthContext = createContext(null)
 
@@ -9,6 +10,16 @@ export function AuthProvider({ children }) {
     return u ? JSON.parse(u) : null
   })
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      const decodedToken = jwtDecode(token)
+      if (decodedToken.exp * 1000 < Date.now()) {
+        logout()
+      }
+    }
+  }, [])
 
   const login = async (email, password) => {
     setLoading(true)

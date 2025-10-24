@@ -2,6 +2,8 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 const router = express.Router();
 
@@ -65,6 +67,26 @@ router.delete('/cards/:id', async (req, res, next) => {
     await prisma.card.delete({ where: { id } });
     res.json({ success: true });
   } catch (e) { next(e); }
+});
+
+router.post('/cards/:id/upload-icon', upload.single('icon'), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const card = await prisma.card.findFirst({ where: { id, userId: req.user.id } });
+    if (!card) return res.status(404).json({ error: 'Cartão não encontrado' });
+
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+    const iconUrl = `/uploads/${req.file.filename}`;
+    const updatedCard = await prisma.card.update({
+      where: { id },
+      data: { iconUrl },
+    });
+
+    res.json(updatedCard);
+  } catch (e) {
+    next(e);
+  }
 });
 
 module.exports = router;
