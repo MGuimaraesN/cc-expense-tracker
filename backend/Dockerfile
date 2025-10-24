@@ -1,8 +1,8 @@
 # ---- Build stage (install deps) ----
 FROM node:20-alpine AS deps
 
-# Instala openssl-dev para o Prisma funcionar no Alpine
-RUN apk add --no-cache openssl-dev
+# Instala dependências para compilar o `canvas`
+RUN apk add --no-cache python3 make g++ openssl-dev
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
