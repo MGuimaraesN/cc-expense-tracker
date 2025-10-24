@@ -196,14 +196,14 @@ export default function Transactions() {
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
-            <select value={form.categoryId} onChange={e=>setForm({...form, categoryId:e.target.value})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600">
+            <select value={form.categoryId} onChange={e=>setForm({...form, categoryId:e.target.value})} className="custom-select">
               <option value="">Categoria</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cartão</label>
-            <select value={form.cardId} onChange={e=>setForm({...form, cardId:e.target.value})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600">
+            <select value={form.cardId} onChange={e=>setForm({...form, cardId:e.target.value})} className="custom-select">
               <option value="">Cartão</option>
               {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -240,7 +240,7 @@ export default function Transactions() {
                       newSplits[index].categoryId = e.target.value;
                       setSplits(newSplits);
                     }}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600"
+                    className="custom-select"
                   >
                     <option value="">Categoria</option>
                     {categories.map((c) => (
@@ -325,15 +325,15 @@ export default function Transactions() {
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <input type="date" value={filters.startDate} onChange={e=>setFilters({...filters, startDate:e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
           <input type="date" value={filters.endDate} onChange={e=>setFilters({...filters, endDate:e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
-          <select value={filters.categoryId} onChange={e=>setFilters({...filters, categoryId:e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600">
+          <select value={filters.categoryId} onChange={e=>setFilters({...filters, categoryId:e.target.value})} className="custom-select">
             <option value="">Categoria</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <select value={filters.cardId} onChange={e=>setFilters({...filters, cardId:e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600">
+          <select value={filters.cardId} onChange={e=>setFilters({...filters, cardId:e.target.value})} className="custom-select">
             <option value="">Cartão</option>
             {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <select value={pageSize} onChange={e=>setPageSize(Number(e.target.value))} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600">
+          <select value={pageSize} onChange={e=>setPageSize(Number(e.target.value))} className="custom-select">
             {[10,20,50,100].map(n=> <option key={n} value={n}>{n}/página</option>)}
           </select>
           <div className="text-right text-gray-600 dark:text-white/70 self-center">Total na página: {fmtCurrency(total)}</div>

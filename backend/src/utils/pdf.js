@@ -1,7 +1,27 @@
 const PDFDocument = require('pdfkit');
+const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+const fs = require('fs');
+
+const chartWidth = 400;
+const chartHeight = 200;
+const chartRenderer = new ChartJSNodeCanvas({ width: chartWidth, height: chartHeight, backgroundColour: 'white' });
+
+async function generateChart(config) {
+  const image = await chartRenderer.renderToBuffer(config);
+  return image;
+}
 
 async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
-  const doc = new PDFDocument({ margin: 40 });
+  const doc = new PDFDocument({
+    margin: 40,
+    bufferPages: true,
+  });
+
+  // Header
+  doc.on('pageAdded', () => {
+    doc.fontSize(10).text('Relatório Mensal de Gastos', { align: 'center' });
+  });
+
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="relatorio_${period.year}_${String(period.month).padStart(2, '0')}.pdf"`);
   doc.pipe(res);
@@ -18,15 +38,36 @@ async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
   doc.moveDown();
 
   doc.fontSize(14).text('Gastos por Categoria', { underline: true });
-  summary.byCategory.forEach(cat => {
-    doc.fontSize(10).text(`${cat.name}: R$ ${cat.amount.toFixed(2)}`);
-  });
+
+  const categoryChartConfig = {
+    type: 'pie',
+    data: {
+      labels: summary.byCategory.map(c => c.name),
+      datasets: [{
+        data: summary.byCategory.map(c => c.amount),
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+      }],
+    },
+  };
+  const categoryChartImage = await generateChart(categoryChartConfig);
+  doc.image(categoryChartImage, { width: chartWidth / 2, height: chartHeight / 2 });
   doc.moveDown();
 
   doc.fontSize(14).text('Gastos por Cartão', { underline: true });
-  summary.byCard.forEach(card => {
-    doc.fontSize(10).text(`${card.name}: R$ ${card.amount.toFixed(2)}`);
-  });
+
+  const cardChartConfig = {
+    type: 'bar',
+    data: {
+      labels: summary.byCard.map(c => c.name),
+      datasets: [{
+        label: 'Gasto',
+        data: summary.byCard.map(c => c.amount),
+        backgroundColor: '#36A2EB',
+      }],
+    },
+  };
+  const cardChartImage = await generateChart(cardChartConfig);
+  doc.image(cardChartImage, { width: chartWidth / 2, height: chartHeight / 2 });
   doc.moveDown();
 
   doc.fontSize(14).text('Transações', { underline: true });
@@ -49,6 +90,13 @@ async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
     doc.text(catCard, col[2]);
     doc.text(t.amount.toFixed(2), col[3], undefined, { align: 'right' });
   });
+
+  // Footer
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i <= range.count - 1; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(8).text(`Página ${i + 1} de ${range.count}`, 40, doc.page.height - 30, { align: 'center' });
+  }
 
   doc.end();
 }

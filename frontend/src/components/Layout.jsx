@@ -25,15 +25,15 @@ export default function Layout({ children }) {
 
   const NavLinks = () => (
     <nav className="flex flex-col gap-1 text-gray-600 dark:text-white/80">
-      <NavLink to="/app" end className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Dashboard</NavLink>
-      <NavLink to="/app/transactions" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Transações</NavLink>
-      <NavLink to="/app/cards" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Cartões</NavLink>
-      <NavLink to="/app/categories" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Categorias</NavLink>
-      <NavLink to="/app/budgets" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Orçamentos</NavLink>
-      <NavLink to="/app/recurring-transactions" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Transações Recorrentes</NavLink>
-      <NavLink to="/app/settings" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Configurações</NavLink>
+      <NavLink to="/app" end className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Dashboard</NavLink>
+      <NavLink to="/app/transactions" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Transações</NavLink>
+      <NavLink to="/app/cards" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Cartões</NavLink>
+      <NavLink to="/app/categories" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Categorias</NavLink>
+      <NavLink to="/app/budgets" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Orçamentos</NavLink>
+      <NavLink to="/app/recurring-transactions" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Transações Recorrentes</NavLink>
+      <NavLink to="/app/settings" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Configurações</NavLink>
       {user.role === 'ADMIN' && (
-        <NavLink to="/app/admin" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5'}`} onClick={() => setSidebarOpen(false)}>Admin</NavLink>
+        <NavLink to="/app/admin" className={({isActive}) => `px-2 py-2 rounded ${isActive ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-white' : 'hover:bg-gray-200/50 dark:hover:bg-white/5 text-gray-600'}`} onClick={() => setSidebarOpen(false)}>Admin</NavLink>
       )}
     </nav>
   );
