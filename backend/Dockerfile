@@ -1,13 +1,14 @@
 # ---- Build stage (install deps) ----
 FROM node:20-alpine AS deps
 
-# Instala dependências para compilar o `canvas`
-RUN apk add --no-cache python3 make g++ openssl-dev
+# Instala openssl (para o Prisma) E
+# todas as dependências para compilar o 'canvas' (python, build-base, cairo, etc.)
+RUN apk add --no-cache openssl-dev python3 build-base cairo-dev jpeg-dev pango-dev giflib-dev pixman-dev
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
+# Agora o npm install/ci deve funcionar
 RUN npm ci || npm install
-
 
 # ---- Runtime stage ----
 FROM node:20-alpine
