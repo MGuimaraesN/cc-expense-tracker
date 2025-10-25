@@ -1,30 +1,73 @@
-import React, { useEffect, useState } from 'react'
-import ReactPaginate from 'react-paginate'
-import api from '../api/client'
-import Card from '../components/Card'
-import Button from '../components/Button'
-import Notification from '../components/Notification'
-import { fmtCurrency, fmtDate } from '../utils/format'
+import React, { useEffect, useState } from 'react';
+import ReactPaginate from 'react-paginate';
+import { useForm, useFieldArray } from 'react-hook-form';
+import api from '../api/client';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import Select from '../components/Select';
+import Notification from '../components/Notification';
+import { fmtCurrency, fmtDate } from '../utils/format';
 
 export default function Transactions() {
-  const [items, setItems] = useState([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [count, setCount] = useState(0)
-  const [cards, setCards] = useState([])
-  const [categories, setCategories] = useState([])
-  const [filters, setFilters] = useState({ startDate: '', endDate: '', cardId: '', categoryId: '' })
-  const [form, setForm] = useState({ date: new Date().toISOString().slice(0,10), amount: 0, description: '', cardId:'', categoryId:'', installments:1, installmentIndex:1 })
-  const [editing, setEditing] = useState(null)
-  const [splits, setSplits] = useState([]);
+  const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm({
+    defaultValues: {
+      date: new Date().toISOString().slice(0, 10),
+      amount: 0,
+      description: '',
+      cardId: '',
+      categoryId: '',
+      installments: 1,
+      installmentIndex: 1,
+      splits: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'splits',
+  });
+
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [count, setCount] = useState(0);
+  const [cards, setCards] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [filters, setFilters] = useState({ startDate: '', endDate: '', cardId: '', categoryId: '' });
+  const [editing, setEditing] = useState(null);
   const [isSplit, setIsSplit] = useState(false);
-  const [loading, setLoading] = useState(false)
-  const [notification, setNotification] = useState({ message: '', type: '' })
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({ message: '', type: '' });
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importPreview, setImportPreview] = useState([]);
   const [importReport, setImportReport] = useState(null);
+
+  useEffect(() => {
+    if (editing) {
+      reset({
+        date: fmtDate(editing.date, 'yyyy-mm-dd'),
+        amount: editing.amount,
+        description: editing.description,
+        cardId: editing.cardId,
+        categoryId: editing.categoryId,
+        installments: editing.installments,
+        installmentIndex: editing.installmentIndex,
+      });
+    } else {
+      reset({
+        date: new Date().toISOString().slice(0, 10),
+        amount: 0,
+        description: '',
+        cardId: '',
+        categoryId: '',
+        installments: 1,
+        installmentIndex: 1,
+      });
+    }
+  }, [editing, reset]);
 
   const load = async () => {
     setLoading(true)
@@ -45,27 +88,27 @@ export default function Transactions() {
   useEffect(() => { loadMeta() }, [])
   useEffect(() => { load() }, [page, pageSize, filters])
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setLoading(true);
-    const payload = { ...form };
+    const payload = { ...data };
     if (payload.cardId === '') delete payload.cardId;
     else payload.cardId = Number(payload.cardId);
 
     if (isSplit) {
-      if (splits.length === 0) {
+      if (payload.splits.length === 0) {
         alert('Adicione pelo menos uma divisão');
+        setLoading(false);
         return;
       }
-      const totalAmount = splits.reduce((sum, split) => sum + Number(split.amount), 0);
-      if (totalAmount !== Number(form.amount)) {
+      const totalAmount = payload.splits.reduce((sum, split) => sum + Number(split.amount), 0);
+      if (totalAmount !== Number(payload.amount)) {
         alert('A soma das divisões deve ser igual ao valor total');
+        setLoading(false);
         return;
       }
-      payload.splits = splits;
     } else {
-        if (payload.categoryId === '') delete payload.categoryId;
-        else payload.categoryId = Number(payload.categoryId);
+      if (payload.categoryId === '') delete payload.categoryId;
+      else payload.categoryId = Number(payload.categoryId);
     }
 
     payload.amount = Number(payload.amount);
@@ -75,8 +118,7 @@ export default function Transactions() {
       } else {
         await api.post('/transactions', payload);
       }
-      setForm({ ...form, amount: 0, description: '' });
-      setSplits([]);
+      reset();
       setIsSplit(false);
       await load();
     } finally {
@@ -111,17 +153,8 @@ export default function Transactions() {
   }
 
   const edit = (t) => {
-    setEditing(t)
-    setForm({
-      date: fmtDate(t.date, 'yyyy-mm-dd'),
-      amount: t.amount,
-      description: t.description,
-      cardId: t.cardId,
-      categoryId: t.categoryId,
-      installments: t.installments,
-      installmentIndex: t.installmentIndex,
-    })
-  }
+    setEditing(t);
+  };
 
   const openImportModal = (e) => {
     const file = e.target.files?.[0];
@@ -187,80 +220,63 @@ export default function Transactions() {
         onClose={() => setNotification({ message: '', type: '' })}
       />
       <Card title={editing ? 'Editar Transação' : 'Nova Transação'}>
-        <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-8 gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-8 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data</label>
-            <input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
+            <Input type="date" {...register('date')} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor</label>
-            <input type="number" step="0.01" placeholder="Valor" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
+            <Input type="number" step="0.01" placeholder="Valor" {...register('amount')} />
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
-            <input placeholder="Descrição" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
+            <Input placeholder="Descrição" {...register('description')} />
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
-            <select value={form.categoryId} onChange={e=>setForm({...form, categoryId:e.target.value})} className="custom-select">
+            <Select {...register('categoryId')}>
               <option value="">Categoria</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cartão</label>
-            <select value={form.cardId} onChange={e=>setForm({...form, cardId:e.target.value})} className="custom-select">
+            <Select {...register('cardId')}>
               <option value="">Cartão</option>
               {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" title="Parcelas">Parcelas</label>
-            <input type="number" min="1" value={form.installments} onChange={e=>setForm({...form, installments:Number(e.target.value)})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
+            <Input type="number" min="1" {...register('installments')} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" title="Parcela Atual">Parcela nº</label>
-            <input type="number" min="1" value={form.installmentIndex} onChange={e=>setForm({...form, installmentIndex:Number(e.target.value)})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" />
+            <Input type="number" min="1" {...register('installmentIndex')} />
           </div>
 
           {isSplit && (
             <div className="md:col-span-8 space-y-2">
-              {splits.map((split, index) => (
-                <div key={index} className="grid grid-cols-3 gap-2">
-                  <input
+              {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-3 gap-2">
+                  <Input
                     type="number"
                     step="0.01"
                     placeholder="Valor"
-                    value={split.amount}
-                    onChange={(e) => {
-                      const newSplits = [...splits];
-                      newSplits[index].amount = e.target.value;
-                      setSplits(newSplits);
-                    }}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600"
+                    {...register(`splits.${index}.amount`)}
                   />
-                  <select
-                    value={split.categoryId}
-                    onChange={(e) => {
-                      const newSplits = [...splits];
-                      newSplits[index].categoryId = e.target.value;
-                      setSplits(newSplits);
-                    }}
-                    className="custom-select"
-                  >
+                  <Select {...register(`splits.${index}.categoryId`)}>
                     <option value="">Categoria</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <Button
                     type="button"
-                    onClick={() => {
-                      const newSplits = splits.filter((_, i) => i !== index);
-                      setSplits(newSplits);
-                    }}
+                    onClick={() => remove(index)}
                     className="bg-red-600 hover:bg-red-700"
                   >
                     Remover
@@ -269,7 +285,7 @@ export default function Transactions() {
               ))}
               <Button
                 type="button"
-                onClick={() => setSplits([...splits, { amount: '', categoryId: '' }])}
+                onClick={() => append({ amount: '', categoryId: '' })}
               >
                 Adicionar Divisão
               </Button>
@@ -277,8 +293,8 @@ export default function Transactions() {
           )}
 
           <div className="md:col-span-8 flex items-center gap-2">
-            <Button isLoading={loading}>{editing ? 'Atualizar' : 'Adicionar'}</Button>
-            {editing && <Button className="bg-slate-600 hover:bg-slate-700" onClick={()=>{ setEditing(null); setForm({ date: new Date().toISOString().slice(0,10), amount: 0, description: '', cardId:'', categoryId:'', installments:1, installmentIndex:1 }) }} type="button">Cancelar</Button>}
+            <Button isLoading={loading} type="submit">{editing ? 'Atualizar' : 'Adicionar'}</Button>
+            {editing && <Button className="bg-slate-600 hover:bg-slate-700" onClick={() => setEditing(null)} type="button">Cancelar</Button>}
             <Button
                 type="button"
                 onClick={() => setIsSplit(!isSplit)}

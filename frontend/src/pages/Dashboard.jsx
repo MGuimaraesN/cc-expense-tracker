@@ -1,5 +1,7 @@
+import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Line, Pie, Bar } from 'react-chartjs-2';
+import { useTheme } from '../context/ThemeContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip as ChartTooltip, Legend, ArcElement, BarElement } from 'chart.js';
 import { format } from 'date-fns';
 import client from '../api/client';
