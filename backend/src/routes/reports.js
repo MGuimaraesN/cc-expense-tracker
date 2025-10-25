@@ -17,12 +17,14 @@ router.get('/reports/monthly', async (req, res, next) => {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59, 999);
 
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    const txs = await prisma.transaction.findMany({
+    const [user, txs] = await Promise.all([
+      prisma.user.findUnique({ where: { id: req.user.id } }),
+      prisma.transaction.findMany({
         where: { userId: req.user.id, date: { gte: start, lte: end } },
         include: { category: true, card: true },
         orderBy: { date: 'asc' }
-      });
+      })
+    ]);
 
     const normalized = txs.map(t => ({
       id: t.id,

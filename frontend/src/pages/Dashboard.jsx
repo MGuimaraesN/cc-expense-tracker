@@ -7,7 +7,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { formatCurrency } from '../utils/format';
+import { fmtCurrency } from '../utils/format';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#FF6384', '#36A2EB'];
 
@@ -16,6 +16,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, C
 export default function Dashboard() {
   const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [endDate, setEndDate] = useState(new Date());
+
+  const { theme } = useTheme();
 
   const { data: summaryData, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
     queryKey: ['summary', startDate, endDate],
@@ -60,10 +62,10 @@ export default function Dashboard() {
     },
     scales: {
       y: {
-        ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' },
+        ticks: { color: theme === 'dark' ? 'white' : 'black' },
       },
       x: {
-        ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' },
+        ticks: { color: theme === 'dark' ? 'white' : 'black' },
       }
     }
   };
@@ -90,7 +92,7 @@ export default function Dashboard() {
     plugins: {
       legend: {
         labels: {
-          color: document.documentElement.classList.contains('dark') ? 'white' : 'black',
+          color: theme === 'dark' ? 'white' : 'black',
         }
       }
     }
@@ -138,7 +140,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card title="Total do mês">
-          {summaryLoading ? <div className="h-8 bg-gray-200 rounded dark:bg-gray-700 w-3/4 animate-pulse"></div> : <div className="text-3xl">{formatCurrency(summaryData?.totalExpenses || 0)}</div>}
+          {summaryLoading ? <div className="h-8 bg-gray-200 rounded dark:bg-gray-700 w-3/4 animate-pulse"></div> : <div className="text-3xl">{fmtCurrency(summaryData?.totalExpenses || 0)}</div>}
         </Card>
         {/* Card Progresso dos Orçamentos */}
         <Card>
@@ -159,7 +161,7 @@ export default function Dashboard() {
                       <div className="flex justify-between mb-1">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{budget.name}</span>
                         <span className={`text-sm font-medium ${isExceeded ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
-                          {formatCurrency(budget.spent)} / {formatCurrency(budget.limit)}
+                          {fmtCurrency(budget.spent)} / {fmtCurrency(budget.limit)}
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
@@ -221,7 +223,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-red-500">
-                        -{formatCurrency(tx.amount)}
+                        -{fmtCurrency(tx.amount)}
                       </span>
                     </div>
                   ))

@@ -20,8 +20,7 @@
     "react-hook-form": "^7.65.0",
     "react-paginate": "^8.3.0",
     "react-query": "^3.39.3",
-    "react-router-dom": "^6.26.1",
-    "recharts": "^2.12.7"
+    "react-router-dom": "^6.26.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

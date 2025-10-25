@@ -1,26 +1,13 @@
-import React, { useEffect, useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import Button from './Button'
+import React, { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import Button from './Button';
 
 export default function Layout({ children }) {
-  const { user, logout } = useAuth()
-  const nav = useNavigate()
-  const [dark, setDark] = useState(true)
-
-  useEffect(() => {
-    const saved = localStorage.getItem('theme') || 'dark'
-    setDark(saved === 'dark')
-    document.documentElement.classList.toggle('dark', saved === 'dark')
-  }, [])
-
-  const toggleTheme = () => {
-    const next = dark ? 'light' : 'dark'
-    setDark(!dark)
-    localStorage.setItem('theme', next)
-    document.documentElement.classList.toggle('dark', next === 'dark')
-  }
-
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const NavLinks = () => (
@@ -49,7 +36,7 @@ export default function Layout({ children }) {
             <Link to="/app" className="font-semibold">💳 Controle de Gastos</Link>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className="text-gray-500 dark:text-white/80 hover:text-gray-700 dark:hover:text-white">{dark ? '🌙' : '☀️'}</button>
+            <button onClick={toggleTheme} className="text-gray-500 dark:text-white/80 hover:text-gray-700 dark:hover:text-white">{theme === 'dark' ? '🌙' : '☀️'}</button>
             {user && <span className="text-gray-600 dark:text-white/70 hidden sm:inline">{user.name}</span>}
             <Button onClick={() => { logout(); nav('/login'); }} className="bg-red-600 hover:bg-red-700">Sair</Button>
           </div>
