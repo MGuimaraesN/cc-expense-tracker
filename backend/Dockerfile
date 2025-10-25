@@ -19,7 +19,8 @@ FROM node:20-alpine
 RUN apk add --no-cache openssl cairo jpeg pango giflib pixman
 
 WORKDIR /app
-ENV NODE_ENV=production
+# ENV NODE_ENV=production
+ENV NODE_ENV=development
 
 # Copia os node_modules do estágio de dependências
 COPY --from=deps /app/node_modules ./node_modules
