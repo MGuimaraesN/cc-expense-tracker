@@ -6,14 +6,12 @@ import Button from '../components/Button'
 import Input from '../components/Input'
 
 export default function Register() {
-  const { register: authRegister } = useAuth()
+  const { register: authRegister, loading } = useAuth()
   const { register, handleSubmit, formState: { errors } } = useForm()
-  const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const nav = useNavigate()
 
   const onSubmit = async (data) => {
-    setLoading(true)
     setServerError('')
     const res = await authRegister(data.name, data.email, data.password)
     if (res.ok) {
@@ -21,7 +19,6 @@ export default function Register() {
     } else {
       setServerError(res.message)
     }
-    setLoading(false)
   }
 
   return (

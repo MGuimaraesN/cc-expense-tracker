@@ -7,14 +7,13 @@ import Input from '../components/Input'
 import { useNotification } from '../context/NotificationContext'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, loading } = useAuth()
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       email: 'user@example.com',
       password: 'secret123'
     }
   })
-  const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
   const nav = useNavigate()
   const loc = useLocation()
@@ -29,7 +28,6 @@ export default function Login() {
   }, [addNotification])
 
   const onSubmit = async (data) => {
-    setLoading(true)
     setServerError('')
     const res = await login(data.email, data.password)
     if (res.ok) {
@@ -38,7 +36,6 @@ export default function Login() {
     } else {
       setServerError(res.message)
     }
-    setLoading(false)
   }
 
   return (
