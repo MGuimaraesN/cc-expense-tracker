@@ -64,12 +64,21 @@ export default function Dashboard() {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="w-48">
-          <Select value={month} onChange={e=>setMonth(parseInt(e.target.value))}>
-            {Array.from({length:12}).map((_,i)=> <option key={i+1} value={i+1}>{String(i+1).padStart(2,'0')} - {monthNames[i]}</option>)}
+          <Select
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+          >
+            {monthNames.map((name, index) => (
+              <option key={index + 1} value={index + 1}>{`${String(index + 1).padStart(2, '0')} - ${name}`}</option>
+            ))}
           </Select>
         </div>
         <div className="w-24">
-          <Input type="number" value={year} onChange={e=>setYear(parseInt(e.target.value)||year)} />
+          <Input
+            type="number"
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+          />
         </div>
         <Button onClick={load} isLoading={loading}>Atualizar</Button>
       </div>
@@ -116,10 +125,10 @@ export default function Dashboard() {
             {loading ? <div className="text-gray-500">Carregando...</div> :
             summary?.byCard.length > 0 ?
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={summary?.byCard || []}>
+              <BarChart data={summary?.byCard || []} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground))" />
-                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
+                <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="amount" name="Valor" fill="hsl(var(--primary))" />
               </BarChart>
