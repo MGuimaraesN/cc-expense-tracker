@@ -1,54 +1,70 @@
 import React, { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import api from '../api/client'
 import Card from '../components/Card'
 import Button from '../components/Button'
-import Notification from '../components/Notification'
+import Input from '../components/Input'
+import { useNotification } from '../context/NotificationContext'
 
 export default function Cards() {
   const [items, setItems] = useState([])
-  const [form, setForm] = useState({ name: '', limit: '', closeDay: '', dueDay: '' })
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm()
   const [editing, setEditing] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [notification, setNotification] = useState({ message: '', type: '' })
+  const [deletingId, setDeletingId] = useState(null)
+  const { addNotification } = useNotification()
 
   const load = async () => {
-    const { data } = await api.get('/cards')
-    setItems(data)
+    setLoading(true)
+    try {
+      const { data } = await api.get('/cards')
+      setItems(data)
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load() }, [])
 
-  const submit = async (e) => {
-    e.preventDefault()
+  const submit = async (data) => {
     setLoading(true)
     const payload = {
-      ...form,
-      limit: Number(form.limit),
-      closeDay: Number(form.closeDay),
-      dueDay: Number(form.dueDay),
+      ...data,
+      limit: Number(data.limit),
+      closeDay: Number(data.closeDay),
+      dueDay: Number(data.dueDay),
     }
-    if (editing) {
-      await api.put(`/cards/${editing.id}`, payload)
-    } else {
-      await api.post('/cards', payload)
+    try {
+      if (editing) {
+        await api.put(`/cards/${editing.id}`, payload)
+      } else {
+        await api.post('/cards', payload)
+      }
+      reset({ name: '', limit: '', closeDay: '', dueDay: '' })
+      setEditing(null)
+      await load()
+    } finally {
+      setLoading(false)
     }
-    setForm({ name: '', limit: '', closeDay: '', dueDay: '' })
-    setEditing(null)
-    await load()
-    setLoading(false)
   }
 
   const edit = (it) => {
     setEditing(it)
-    setForm({ name: it.name, limit: it.limit, closeDay: it.closeDay, dueDay: it.dueDay })
+    setValue('name', it.name)
+    setValue('limit', it.limit)
+    setValue('closeDay', it.closeDay)
+    setValue('dueDay', it.dueDay)
   }
 
   const del = async (id) => {
+    setDeletingId(id)
     try {
       await api.delete(`/cards/${id}`)
-      setNotification({ message: 'Cartão excluído com sucesso!', type: 'success' })
+      addNotification('Cartão excluído com sucesso!', 'success')
       await load()
     } catch (error) {
-      setNotification({ message: 'Erro ao excluir cartão.', type: 'error' })
+      addNotification('Erro ao excluir cartão.', 'error')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -68,32 +84,31 @@ export default function Cards() {
 
   return (
     <div className="space-y-4">
-      <Notification
-        message={notification.message}
-        type={notification.type}
-        onClose={() => setNotification({ message: '', type: '' })}
-      />
       <Card title={editing ? 'Editar Cartão' : 'Novo Cartão'}>
-        <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form onSubmit={handleSubmit(submit)} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
-            <input placeholder="Nome do Cartão" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} />
+            <Input placeholder="Nome do Cartão" {...register('name', { required: 'Nome é obrigatório' })} />
+            {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Limite</label>
-            <input placeholder="Limite" type="number" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" value={form.limit} onChange={e=>setForm({...form, limit:Number(e.target.value)})} />
+            <Input placeholder="Limite" type="number" {...register('limit', { required: 'Limite é obrigatório' })} />
+            {errors.limit && <p className="text-red-400 text-sm mt-1">{errors.limit.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Dia de Fechamento</label>
-            <input placeholder="Dia do Fechamento" type="number" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" value={form.closeDay} onChange={e=>setForm({...form, closeDay:Number(e.target.value)})} />
+            <Input placeholder="Dia do Fechamento" type="number" {...register('closeDay', { required: 'Dia de fechamento é obrigatório' })} />
+            {errors.closeDay && <p className="text-red-400 text-sm mt-1">{errors.closeDay.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Dia de Vencimento</label>
-            <input placeholder="Dia do Vencimento" type="number" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600" value={form.dueDay} onChange={e=>setForm({...form, dueDay:Number(e.target.value)})} />
+            <Input placeholder="Dia do Vencimento" type="number" {...register('dueDay', { required: 'Dia de vencimento é obrigatório' })} />
+            {errors.dueDay && <p className="text-red-400 text-sm mt-1">{errors.dueDay.message}</p>}
           </div>
           <div className="md:col-span-4">
-            <Button disabled={loading}>{loading ? 'Salvando...' : (editing ? 'Atualizar' : 'Adicionar')}</Button>
-            {editing && <Button className="ml-2 bg-slate-600 hover:bg-slate-700" onClick={()=>{ setEditing(null); setForm({ name:'', limit:'', closeDay:'', dueDay:'' }) }} type="button">Cancelar</Button>}
+            <Button isLoading={loading}>{editing ? 'Atualizar' : 'Adicionar'}</Button>
+            {editing && <Button className="ml-2 bg-slate-600 hover:bg-slate-700" onClick={()=>{ setEditing(null); reset({ name:'', limit:'', closeDay:'', dueDay:'' }) }} type="button">Cancelar</Button>}
           </div>
         </form>
       </Card>
@@ -112,7 +127,17 @@ export default function Cards() {
               </tr>
             </thead>
             <tbody>
-              {items.map(it => (
+              {loading && Array.from({length:3}).map((_, i) => (
+                <tr key={i} className="border-t border-gray-200 dark:border-white/10 animate-pulse">
+                  <td className="px-4 py-2"><div className="w-10 h-10 bg-gray-200 dark:bg-white/10 rounded-full"></div></td>
+                  <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                  <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                  <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                  <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                  <td className="px-4 py-2"></td>
+                </tr>
+              ))}
+              {!loading && items.map(it => (
                 <tr key={it.id} className="border-t border-gray-200 dark:border-white/10">
                   <td className="px-4 py-2">
                     {it.iconUrl ? (
@@ -131,7 +156,7 @@ export default function Cards() {
                       <input type="file" className="hidden" onChange={(e) => handleIconUpload(it.id, e.target.files[0])} />
                     </label>
                     <Button className="bg-slate-600 hover:bg-slate-700 ml-2" onClick={()=>edit(it)}>Editar</Button>
-                    <Button className="bg-red-600 hover:bg-red-700 ml-2" onClick={()=>del(it.id)}>Excluir</Button>
+                    <Button className="bg-red-600 hover:bg-red-700 ml-2" onClick={()=>del(it.id)} isLoading={deletingId === it.id}>Excluir</Button>
                   </td>
                 </tr>
               ))}

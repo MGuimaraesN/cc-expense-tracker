@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import ReactPaginate from 'react-paginate'
 import api from '../api/client'
 import Card from '../components/Card'
 import Button from '../components/Button'
@@ -26,11 +27,16 @@ export default function Transactions() {
   const [importReport, setImportReport] = useState(null);
 
   const load = async () => {
-    const params = { page, pageSize, ...filters }
-    const { data } = await api.get('/transactions', { params })
-    setItems(data.items)
-    setCount(data.total)
-    setTotal(data.items.reduce((s,t)=> s + t.amount, 0))
+    setLoading(true)
+    try {
+      const params = { page, pageSize, ...filters }
+      const { data } = await api.get('/transactions', { params })
+      setItems(data.items)
+      setCount(data.total)
+      setTotal(data.items.reduce((s,t)=> s + t.amount, 0))
+    } finally {
+      setLoading(false)
+    }
   }
   const loadMeta = async () => {
     const [cs, cats] = await Promise.all([api.get('/cards'), api.get('/categories')])
@@ -271,7 +277,7 @@ export default function Transactions() {
           )}
 
           <div className="md:col-span-8 flex items-center gap-2">
-            <Button disabled={loading}>{loading ? 'Salvando...' : (editing ? 'Atualizar' : 'Adicionar')}</Button>
+            <Button isLoading={loading}>{editing ? 'Atualizar' : 'Adicionar'}</Button>
             {editing && <Button className="bg-slate-600 hover:bg-slate-700" onClick={()=>{ setEditing(null); setForm({ date: new Date().toISOString().slice(0,10), amount: 0, description: '', cardId:'', categoryId:'', installments:1, installmentIndex:1 }) }} type="button">Cancelar</Button>}
             <Button
                 type="button"
@@ -354,37 +360,71 @@ export default function Transactions() {
               </tr>
             </thead>
             <tbody>
-              {items.map(t => (
-                <tr key={t.id} className="border-t border-gray-200 dark:border-white/10">
-                  <td className="px-4 py-2">{fmtDate(t.date)}</td>
-                  <td className="px-4 py-2">{t.description}</td>
-                  <td className="px-4 py-2">{t.categoryName || '-'}</td>
-                  <td className="px-4 py-2">{t.cardName || '-'}</td>
-                  <td className="text-right px-4 py-2">{fmtCurrency(t.amount)}</td>
-                  <td className="text-right px-4 py-2 whitespace-nowrap">
-                      <label className="cursor-pointer">
-                          <span className="px-2 py-1 rounded bg-slate-600 hover:bg-slate-700 text-white text-xs">Anexar Comprovante</span>
-                          <input
-                              type="file"
-                              className="hidden"
-                              onChange={(e) => uploadReceipt(t.id, e.target.files[0])}
-                          />
-                      </label>
-                    <Button className="bg-slate-600 hover:bg-slate-700 ml-2" onClick={()=>edit(t)}>Editar</Button>
-                    <Button className="bg-red-600 hover:bg-red-700 ml-2" onClick={()=>del(t.id)}>Excluir</Button>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-t border-gray-200 dark:border-white/10 animate-pulse">
+                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded dark:bg-gray-700"></div></td>
+                    <td className="px-4 py-2"></td>
+                  </tr>
+                ))
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-4 text-gray-500 dark:text-gray-400">
+                    Nenhuma transação encontrada.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                items.map(t => (
+                  <tr key={t.id} className="border-t border-gray-200 dark:border-white/10">
+                    <td className="px-4 py-2">{fmtDate(t.date)}</td>
+                    <td className="px-4 py-2">{t.description}</td>
+                    <td className="px-4 py-2">{t.categoryName || '-'}</td>
+                    <td className="px-4 py-2">{t.cardName || '-'}</td>
+                    <td className="text-right px-4 py-2">{fmtCurrency(t.amount)}</td>
+                    <td className="text-right px-4 py-2 whitespace-nowrap">
+                        <label className="cursor-pointer">
+                            <span className="px-2 py-1 rounded bg-slate-600 hover:bg-slate-700 text-white text-xs">Anexar Comprovante</span>
+                            <input
+                                type="file"
+                                className="hidden"
+                                onChange={(e) => uploadReceipt(t.id, e.target.files[0])}
+                            />
+                        </label>
+                      <Button className="bg-slate-600 hover:bg-slate-700 ml-2" onClick={()=>edit(t)}>Editar</Button>
+                      <Button className="bg-red-600 hover:bg-red-700 ml-2" onClick={()=>del(t.id)}>Excluir</Button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
         <div className="flex justify-between items-center mt-3 text-gray-600 dark:text-white/70">
           <div>Mostrando {items.length} de {count}</div>
-          <div className="flex gap-2">
-            <Button className="bg-slate-600 hover:bg-slate-700" onClick={()=>setPage(p=>Math.max(1, p-1))}>Anterior</Button>
-            <div>Página {page}</div>
-            <Button className="bg-slate-600 hover:bg-slate-700" onClick={()=>setPage(p=>p+1)}>Próxima</Button>
-          </div>
+          <ReactPaginate
+            previousLabel={'Anterior'}
+            nextLabel={'Próxima'}
+            breakLabel={'...'}
+            pageCount={Math.ceil(count / pageSize)}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={({ selected }) => setPage(selected + 1)}
+            containerClassName={'pagination flex gap-2 items-center'}
+            activeClassName={'active'}
+            pageClassName={'page-item'}
+            pageLinkClassName={'page-link px-3 py-2 rounded bg-slate-700 hover:bg-slate-600'}
+            previousClassName={'page-item'}
+            previousLinkClassName={'page-link px-3 py-2 rounded bg-slate-700 hover:bg-slate-600'}
+            nextClassName={'page-item'}
+            nextLinkClassName={'page-link px-3 py-2 rounded bg-slate-700 hover:bg-slate-600'}
+            breakClassName={'page-item'}
+            breakLinkClassName={'page-link px-3 py-2'}
+            activeLinkClassName={'bg-blue-600'}
+          />
         </div>
       </Card>
     </div>

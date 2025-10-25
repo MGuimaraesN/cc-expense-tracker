@@ -39,8 +39,8 @@ export default function Layout({ children }) {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-800 dark:bg-slate-950 dark:text-white">
-      <header className="border-b border-gray-200 dark:border-white/10 fixed top-0 left-0 right-0 h-14 bg-gray-100 dark:bg-slate-950 z-20">
+    <div className="min-h-screen bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+      <header className="border-b border-gray-200 dark:border-white/10 fixed top-0 left-0 right-0 h-14 bg-gray-100 dark:bg-gray-900 z-20">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="md:hidden text-gray-500 dark:text-white/80">
@@ -57,7 +57,7 @@ export default function Layout({ children }) {
       </header>
       <div className="max-w-6xl mx-auto px-4 flex pt-14">
         {/* Mobile sidebar */}
-        <aside className={`fixed top-14 left-0 h-full w-56 bg-white dark:bg-slate-900 z-10 p-4 border-r border-gray-200 dark:border-white/10 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform md:hidden`}>
+        <aside className={`fixed top-14 left-0 h-full w-56 bg-white dark:bg-gray-800 z-10 p-4 border-r border-gray-200 dark:border-white/10 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform md:hidden`}>
           <NavLinks />
         </aside>
         {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-0 md:hidden" onClick={() => setSidebarOpen(false)}></div>}

@@ -48,10 +48,13 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const logout = () => {
+  const logout = (expired = false) => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setUser(null)
+    if (expired) {
+      sessionStorage.setItem('loginMessage', 'Sua sessão expirou. Faça login novamente.')
+    }
   }
 
   return (
