@@ -2,12 +2,17 @@ const PDFDocument = require('pdfkit');
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 const fs = require('fs');
 
-const chartWidth = 400;
-const chartHeight = 200;
-const chartRenderer = new ChartJSNodeCanvas({ width: chartWidth, height: chartHeight, backgroundColour: 'white' });
+const pieChartSize = 250;
+const barChartWidth = 400;
+const barChartHeight = 200;
 
-async function generateChart(config) {
-  const image = await chartRenderer.renderToBuffer(config);
+const pieChartRenderer = new ChartJSNodeCanvas({ width: pieChartSize, height: pieChartSize, backgroundColour: 'white' });
+const barChartRenderer = new ChartJSNodeCanvas({ width: barChartWidth, height: barChartHeight, backgroundColour: 'white' });
+
+async function generateChart(type, config) {
+  const image = type === 'pie'
+    ? await pieChartRenderer.renderToBuffer(config)
+    : await barChartRenderer.renderToBuffer(config);
   return image;
 }
 
@@ -48,9 +53,12 @@ async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
         backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
       }],
     },
+    options: {
+      animation: false,
+    }
   };
-  const categoryChartImage = await generateChart(categoryChartConfig);
-  doc.image(categoryChartImage, { width: chartWidth / 2, height: chartHeight / 2 });
+  const categoryChartImage = await generateChart('pie', categoryChartConfig);
+  doc.image(categoryChartImage, { width: pieChartSize, align: 'center' });
   doc.moveDown();
 
   doc.fontSize(14).text('Gastos por Cartão', { underline: true });
@@ -65,9 +73,12 @@ async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
         backgroundColor: '#36A2EB',
       }],
     },
+    options: {
+      animation: false,
+    }
   };
-  const cardChartImage = await generateChart(cardChartConfig);
-  doc.image(cardChartImage, { width: chartWidth / 2, height: chartHeight / 2 });
+  const cardChartImage = await generateChart('bar', cardChartConfig);
+  doc.image(cardChartImage, { width: barChartWidth, align: 'center' });
   doc.moveDown();
 
   doc.fontSize(14).text('Transações', { underline: true });
