@@ -26,6 +26,27 @@ router.get('/summary', auth, async (req, res, next) => {
       where: { userId, date: whereDate, categoryId: { not: null } },
     });
 
+    const expensesByCard = await prisma.transaction.groupBy({
+      by: ['cardId'],
+      _sum: { amount: true },
+      where: { userId, date: whereDate, cardId: { not: null } },
+    });
+
+    const [categories, cards] = await Promise.all([
+      prisma.category.findMany({ where: { userId, id: { in: expensesByCategory.map(e => e.categoryId) } } }),
+      prisma.card.findMany({ where: { userId, id: { in: expensesByCard.map(e => e.cardId) } } }),
+    ]);
+
+    const byCategory = expensesByCategory.map(e => ({
+      name: categories.find(c => c.id === e.categoryId)?.name || 'Outros',
+      amount: e._sum.amount,
+    }));
+
+    const byCard = expensesByCard.map(e => ({
+      name: cards.find(c => c.id === e.cardId)?.name || 'Outros',
+      amount: e._sum.amount,
+    }));
+
     const budgets = await prisma.budget.findMany({
       where: { userId },
       include: { category: true },
@@ -60,6 +81,8 @@ router.get('/summary', auth, async (req, res, next) => {
       budgetsExceeded,
       budgetStatus,
       recentTransactions,
+      byCategory,
+      byCard,
     });
   } catch (error) {
     next(error);
