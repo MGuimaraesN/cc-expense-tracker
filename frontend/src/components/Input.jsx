@@ -1,13 +1,13 @@
-import React from 'react'
+import React from 'react';
 
-const Input = React.forwardRef(({ className, ...props }, ref) => {
-  return (
-    <input
-      ref={ref}
-      {...props}
-      className={`bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-800 dark:text-white rounded px-2 py-1 w-full ${className}`}
-    />
-  )
-})
+const Input = React.forwardRef(({ value, onClick, className, ...props }, ref) => (
+  <input
+    value={value}
+    onClick={onClick}
+    ref={ref}
+    className={`w-full pl-10 pr-4 py-2 rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-800 dark:border-gray-600 dark:text-white ${className}`}
+    {...props}
+  />
+));
 
-export default Input
+export default Input;
