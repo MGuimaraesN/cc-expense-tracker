@@ -21,12 +21,13 @@ services:
                     npm run dev"
   web:
     container_name: web
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: development
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev
     depends_on:
       - api
