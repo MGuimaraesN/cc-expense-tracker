@@ -1,6 +1,7 @@
 import React from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { useAuth } from './context/AuthContext'
+import { NotificationProvider } from './context/NotificationContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -10,11 +11,21 @@ import Cards from './pages/Cards'
 import Categories from './pages/Categories'
 import Budgets from './pages/Budgets'
 import RecurringTransactions from './pages/RecurringTransactions'
+import Settings from './pages/Settings'
+import Admin from './pages/Admin'
 
 function RequireAuth({ children }) {
   const { user } = useAuth()
   const loc = useLocation()
   if (!user) return <Navigate to="/login" state={{ from: loc }} replace />
+  return children
+}
+
+function AdminRoute({ children }) {
+  const { user } = useAuth()
+  const loc = useLocation()
+  if (!user) return <Navigate to="/login" state={{ from: loc }} replace />
+  if (user.role !== 'ADMIN') return <Navigate to="/app" state={{ from: loc }} replace />
   return children
 }
 
@@ -29,6 +40,8 @@ function AppRoutes() {
       <Route path="/app/categories" element={<RequireAuth><Layout><Categories /></Layout></RequireAuth>} />
       <Route path="/app/budgets" element={<RequireAuth><Layout><Budgets /></Layout></RequireAuth>} />
       <Route path="/app/recurring-transactions" element={<RequireAuth><Layout><RecurringTransactions /></Layout></RequireAuth>} />
+      <Route path="/app/settings" element={<RequireAuth><Layout><Settings /></Layout></RequireAuth>} />
+      <Route path="/app/admin" element={<AdminRoute><Layout><Admin /></Layout></AdminRoute>} />
       <Route path="*" element={<Navigate to="/app" />} />
     </Routes>
   )
@@ -36,8 +49,8 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
+    <NotificationProvider>
       <AppRoutes />
-    </AuthProvider>
+    </NotificationProvider>
   )
 }

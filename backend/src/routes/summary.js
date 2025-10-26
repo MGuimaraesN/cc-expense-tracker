@@ -5,54 +5,98 @@ const auth = require('../middleware/auth');
 const router = express.Router();
 router.use(auth);
 
-router.get('/summary', async (req, res, next) => {
+router.get('/summary', auth, async (req, res, next) => {
   try {
-    const month = Number(req.query.month);
-    const year = Number(req.query.year);
-    if (!month || !year) return res.status(400).json({ error: 'Informe month e year' });
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    const { startDate, endDate } = req.query;
+    const userId = req.user.id;
 
-    const [txs, cats, cards, budgets] = await Promise.all([
-      prisma.transaction.findMany({
-        where: { userId: req.user.id, date: { gte: start, lte: end } },
-        include: { category: true, card: true }
-      }),
-      prisma.category.findMany({ where: { userId: req.user.id } }),
-      prisma.card.findMany({ where: { userId: req.user.id } }),
-      prisma.budget.findMany({ where: { userId: req.user.id, month, year }, include: { category: true } })
-    ]);
+    const whereDate = {
+      gte: startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      lte: endDate ? new Date(endDate) : new Date(),
+    };
 
-    const total = txs.reduce((sum, t) => sum + t.amount, 0);
-
-    const byCategory = {};
-    txs.forEach(t => {
-      const key = t.category?.name || 'Sem categoria';
-      byCategory[key] = (byCategory[key] || 0) + t.amount;
-    });
-    const byCard = {};
-    txs.forEach(t => {
-      const key = t.card?.name || 'Sem cartão';
-      byCard[key] = (byCard[key] || 0) + t.amount;
+    const totalExpenses = await prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { userId, date: whereDate },
     });
 
-    // Budgets status
-    const budgetStatus = budgets.map(b => ({
-      categoryId: b.categoryId,
-      categoryName: b.category.name,
-      budget: b.amount,
-      spent: txs.filter(t => t.categoryId === b.categoryId).reduce((s, t) => s + t.amount, 0),
-      exceeded: txs.filter(t => t.categoryId === b.categoryId).reduce((s, t) => s + t.amount, 0) > b.amount
-    }));
+    const expensesByCategory = await prisma.transaction.groupBy({
+      by: ['categoryId'],
+      _sum: { amount: true },
+      where: { userId, date: whereDate, categoryId: { not: null } },
+    });
+
+    const budgets = await prisma.budget.findMany({
+      where: { userId },
+      include: { category: true },
+    });
+
+    const budgetStatus = budgets.map(budget => {
+      const categoryExpense = expensesByCategory.find(e => e.categoryId === budget.categoryId);
+      const spent = categoryExpense ? categoryExpense._sum.amount : 0;
+      return {
+        id: budget.id,
+        name: budget.category.name,
+        limit: budget.amount,
+        spent,
+        percentage: (spent / budget.amount) * 100,
+      };
+    });
+
+    const budgetsExceeded = budgetStatus.filter(b => b.spent > b.limit).length;
+
+    const recentTransactions = await prisma.transaction.findMany({
+      where: {
+        userId,
+        date: whereDate,
+      },
+      take: 5,
+      orderBy: { date: 'desc' },
+      include: { category: true },
+    });
 
     res.json({
-      period: { month, year },
-      total,
-      byCategory: Object.entries(byCategory).map(([name, amount]) => ({ name, amount })),
-      byCard: Object.entries(byCard).map(([name, amount]) => ({ name, amount })),
-      budgetStatus
+      totalExpenses: totalExpenses._sum.amount || 0,
+      budgetsExceeded,
+      budgetStatus,
+      recentTransactions,
     });
-  } catch (e) { next(e); }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/trends', auth, async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const userId = req.user.id;
+
+    const whereDate = {
+      gte: startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      lte: endDate ? new Date(endDate) : new Date(),
+    };
+
+    const trends = await prisma.transaction.groupBy({
+      by: ['date'],
+      where: {
+        userId,
+        date: whereDate,
+      },
+      _sum: {
+        amount: true,
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+
+    const labels = trends.map(t => new Date(t.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+    const data = trends.map(t => t._sum.amount);
+
+    res.json({ labels, data });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;
