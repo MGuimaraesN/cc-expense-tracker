@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 
 # Instala openssl (para o Prisma) E
 # todas as dependências para COMPILAR o 'canvas' (python, build-base, cairo-dev, etc.)
-RUN apk add --no-cache openssl-dev python3 build-base cairo-dev jpeg-dev pango-dev giflib-dev pixman-dev
+RUN apk add --no-cache openssl-dev
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -16,7 +16,7 @@ FROM node:20-alpine
 
 # Instala openssl (para o Prisma) E
 # todas as dependências para EXECUTAR o 'canvas' (cairo, jpeg, pango, etc.)
-RUN apk add --no-cache openssl cairo jpeg pango giflib pixman
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 # ENV NODE_ENV=production
