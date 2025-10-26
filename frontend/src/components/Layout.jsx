@@ -28,21 +28,21 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
       <header className="border-b border-gray-200 dark:border-white/10 fixed top-0 left-0 right-0 h-14 bg-gray-100 dark:bg-gray-900 z-20">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-4">
             <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="md:hidden text-gray-500 dark:text-white/80">
               ☰
             </button>
             <Link to="/app" className="font-semibold">💳 Controle de Gastos</Link>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <button onClick={toggleTheme} className="text-gray-500 dark:text-white/80 hover:text-gray-700 dark:hover:text-white">{theme === 'dark' ? '🌙' : '☀️'}</button>
             {user && <span className="text-gray-600 dark:text-white/70 hidden sm:inline">{user.name}</span>}
             <Button onClick={() => { logout(); nav('/login'); }} className="bg-red-600 hover:bg-red-700">Sair</Button>
           </div>
         </div>
       </header>
-      <div className="max-w-6xl mx-auto px-4 flex pt-14">
+      <div className="mx-auto px-4 flex pt-14">
         {/* Mobile sidebar */}
         <aside className={`fixed top-14 left-0 h-full w-56 bg-white dark:bg-gray-800 z-10 p-4 border-r border-gray-200 dark:border-white/10 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform md:hidden`}>
           <NavLinks />

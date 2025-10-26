@@ -5,7 +5,7 @@ const auth = require('../middleware/auth');
 const router = express.Router();
 router.use(auth);
 
-router.get('/', auth, async (req, res, next) => {
+router.get('/summary', auth, async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
     const userId = req.user.id;
