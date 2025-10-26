@@ -66,7 +66,7 @@ router.get('/summary', auth, async (req, res, next) => {
   }
 });
 
-router.get('/trends', auth, async (req, res, next) => {
+router.get('/summary/trends', auth, async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
     const userId = req.user.id;
