@@ -31,7 +31,7 @@ app.use('/api', cardsRoutes);
 app.use('/api', categoriesRoutes);
 app.use('/api', transactionsRoutes);
 app.use('/api', budgetsRoutes);
-app.use('/api', summaryRoutes);
+app.use('/api/summary', summaryRoutes);
 app.use('/api', reportsRoutes);
 app.use('/api', recurringTransactionsRoutes);
 app.use('/api', adminRoutes);
