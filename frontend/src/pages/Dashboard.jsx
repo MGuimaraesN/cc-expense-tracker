@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   const { data: trendsData, isLoading: trendsLoading, isError: trendsError } = useQuery(
     ['trends', startDate, endDate],
-    () => client.get('/summary/trends', { params: { startDate: startDate.toISOString(), endDate: endDate.toISOString() } }).then(res => res.data),
+    () => client.get('/trends', { params: { startDate: startDate.toISOString(), endDate: endDate.toISOString() } }).then(res => res.data),
     { keepPreviousData: true }
   );
 

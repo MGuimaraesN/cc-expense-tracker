@@ -12,16 +12,21 @@ services:
       - NODE_ENV=development
     volumes:
       - ./backend/prisma:/app/prisma
+      - ./backend/src:/app/src
     command: sh -c "echo '--- Sincronizando Schema (db push) ---' && 
                     npx prisma db push --accept-data-loss && 
                     echo '--- Populando Banco (db seed) ---' && 
                     npx prisma db seed && 
-                    echo '--- Iniciando Aplicação ---' && 
-                    node src/index.js"
+                    echo '--- Iniciando Aplicação (DEV) ---' &&
+                    npm run dev"
   web:
     container_name: web
     build: ./frontend
     ports:
-      - "5173:80"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
     depends_on:
       - api
