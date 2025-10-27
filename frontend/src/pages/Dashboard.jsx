@@ -124,7 +124,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-end gap-4">
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data Inicial</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Inicial</label>
               <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 mt-2.5 pointer-events-none" />
               <DatePicker
                 selected={startDate}
@@ -134,7 +134,7 @@ export default function Dashboard() {
               />
             </div>
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data Final</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Final</label>
               <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 mt-2.5 pointer-events-none" />
               <DatePicker
                 selected={endDate}
