@@ -8,6 +8,68 @@ html, body, #root { height: 100%; }
   .custom-select {
     @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-800 dark:border-gray-600 dark:text-white;
   }
+
+  /* --- Add React Datepicker Dark Mode Overrides Here --- */
+  .react-datepicker {
+    @apply dark:bg-slate-800 dark:border-gray-600;
+  }
+  .react-datepicker__header {
+    @apply dark:bg-slate-700 dark:border-b-gray-600;
+  }
+  .react-datepicker__current-month,
+  .react-datepicker-time__header,
+  .react-datepicker-year-header {
+    @apply dark:text-white;
+  }
+  .react-datepicker__day-name,
+  .react-datepicker__day,
+  .react-datepicker__time-name {
+    @apply dark:text-white;
+  }
+  .react-datepicker__day:hover,
+  .react-datepicker__month-text:hover,
+  .react-datepicker__quarter-text:hover,
+  .react-datepicker__year-text:hover {
+    @apply dark:bg-slate-600;
+  }
+  .react-datepicker__day--selected,
+  .react-datepicker__day--in-selecting-range,
+  .react-datepicker__day--in-range,
+  .react-datepicker__month-text--selected,
+  .react-datepicker__month-text--in-selecting-range,
+  .react-datepicker__month-text--in-range,
+  .react-datepicker__quarter-text--selected,
+  .react-datepicker__quarter-text--in-selecting-range,
+  .react-datepicker__quarter-text--in-range,
+  .react-datepicker__year-text--selected,
+  .react-datepicker__year-text--in-selecting-range,
+  .react-datepicker__year-text--in-range {
+    @apply dark:bg-blue-600 dark:text-white;
+  }
+  .react-datepicker__day--keyboard-selected,
+  .react-datepicker__month-text--keyboard-selected,
+  .react-datepicker__quarter-text--keyboard-selected,
+  .react-datepicker__year-text--keyboard-selected {
+     @apply dark:bg-blue-500 dark:text-white;
+  }
+  .react-datepicker__day--disabled,
+  .react-datepicker__month-text--disabled,
+  .react-datepicker__quarter-text--disabled,
+  .react-datepicker__year-text--disabled {
+    @apply dark:text-gray-500;
+  }
+  .react-datepicker__navigation-icon::before {
+     @apply dark:border-white; /* Cor da seta */
+  }
+  .react-datepicker__year-read-view--down-arrow,
+  .react-datepicker__month-read-view--down-arrow,
+  .react-datepicker__month-year-read-view--down-arrow {
+     @apply dark:border-white; /* Cor da seta */
+  }
+  .react-datepicker__today-button {
+    @apply dark:bg-slate-600 dark:border-t-gray-600 dark:text-white;
+  }
+  /* --- End Datepicker Overrides --- */
 }
 
 .pagination .active a {

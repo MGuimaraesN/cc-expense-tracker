@@ -118,7 +118,7 @@ export default function Dashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfToday()); setEndDate(endOfToday()); }}><FaClock className="mr-2" /> Hoje</Button>
               <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfYesterday()); setEndDate(endOfYesterday()); }}><FaCalendarAlt className="mr-2" /> Ontem</Button>
-              <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfWeek(new Date())); setEndDate(min(endOfWeek(new Date()), endOfToday())); }}><FaCalendarAlt className="mr-2" /> Esta Semana</Button>
+              <Button size="sm" variant="outline" onClick={() => { setStartDate(subDays(new Date(), 6)); setEndDate(endOfToday()); }}><FaCalendarAlt className="mr-2" /> Últimos 7 Dias</Button>
               <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfMonth(new Date())); setEndDate(endOfMonth(new Date())); }}><FaCalendarAlt className="mr-2" /> Este Mês</Button>
             </div>
           </div>
