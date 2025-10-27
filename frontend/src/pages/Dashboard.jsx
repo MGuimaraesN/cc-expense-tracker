@@ -3,7 +3,7 @@ import { useQuery } from 'react-query';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import { useTheme } from '../context/ThemeContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip as ChartTooltip, Legend, ArcElement, BarElement } from 'chart.js';
-import { startOfMonth, endOfMonth, startOfToday, endOfToday, subDays, startOfWeek, endOfWeek, startOfYesterday, endOfYesterday } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfToday, endOfToday, subDays, startOfWeek, endOfWeek, startOfYesterday, endOfYesterday, min } from 'date-fns';
 import client from '../api/client';
 import Button from '../components/Button';
 import DatePicker from 'react-datepicker';
@@ -118,26 +118,28 @@ export default function Dashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfToday()); setEndDate(endOfToday()); }}><FaClock className="mr-2" /> Hoje</Button>
               <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfYesterday()); setEndDate(endOfYesterday()); }}><FaCalendarAlt className="mr-2" /> Ontem</Button>
-              <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfWeek(new Date())); setEndDate(endOfWeek(new Date())); }}><FaCalendarAlt className="mr-2" /> Esta Semana</Button>
+              <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfWeek(new Date())); setEndDate(min(endOfWeek(new Date()), endOfToday())); }}><FaCalendarAlt className="mr-2" /> Esta Semana</Button>
               <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfMonth(new Date())); setEndDate(endOfMonth(new Date())); }}><FaCalendarAlt className="mr-2" /> Este Mês</Button>
             </div>
           </div>
-          <div className="flex items-center gap-4 pt-0 sm:pt-7">
+          <div className="flex items-end gap-4">
             <div className="relative">
-              <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data Inicial</label>
+              <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 mt-2.5 pointer-events-none" />
               <DatePicker
                 selected={startDate}
                 onChange={(date) => setStartDate(date)}
-                customInput={<Input />}
+                customInput={<Input className="pl-10 pr-4 py-2" />}
                 dateFormat="dd/MM/yyyy"
               />
             </div>
             <div className="relative">
-              <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data Final</label>
+              <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 mt-2.5 pointer-events-none" />
               <DatePicker
                 selected={endDate}
                 onChange={(date) => setEndDate(date)}
-                customInput={<Input />}
+                customInput={<Input className="pl-10 pr-4 py-2" />}
                 dateFormat="dd/MM/yyyy"
               />
             </div>
