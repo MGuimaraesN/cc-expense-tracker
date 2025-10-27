@@ -2,7 +2,7 @@ import React from 'react';
 import { format } from 'date-fns';
 import { fmtCurrency } from '../../utils/format';
 import Card from '../Card';
-import { FaReceipt } from 'react-icons/fa';
+import { FaReceipt, FaInfoCircle } from 'react-icons/fa';
 
 const ErrorDisplay = ({ message }) => (
   <div className="flex flex-col items-center justify-center h-full text-red-500">
@@ -33,7 +33,10 @@ const TransactionList = ({ transactions, loading, error }) => (
             </div>
           ))
         ) : (
-          <p className="text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma transação no período.</p>
+          <div className="flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400 py-8">
+            <FaInfoCircle className="text-4xl mb-2" />
+            <p>Nenhuma transação encontrada neste período.</p>
+          </div>
         )}
     </div>
   </Card>

@@ -9,13 +9,12 @@ router.use(auth);
 
 router.get('/reports/monthly', async (req, res, next) => {
   try {
-    const month = Number(req.query.month);
-    const year = Number(req.query.year);
+    const { startDate, endDate } = req.query;
     const format = (req.query.format || 'csv').toLowerCase();
-    if (!month || !year) return res.status(400).json({ error: 'Informe month e year' });
+    if (!startDate || !endDate) return res.status(400).json({ error: 'Informe startDate e endDate' });
 
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
     const [user, txs] = await Promise.all([
       prisma.user.findUnique({ where: { id: req.user.id } }),
@@ -53,10 +52,15 @@ router.get('/reports/monthly', async (req, res, next) => {
       byCard: Object.entries(byCard).map(([name, amount]) => ({ name, amount })),
     };
 
+    const period = {
+      start: start.toLocaleDateString('pt-BR'),
+      end: end.toLocaleDateString('pt-BR'),
+    };
+
     if (format === 'pdf') {
-      buildMonthlyReportPdf(res, user, { month, year }, normalized, summary);
+      buildMonthlyReportPdf(res, user, period, normalized, summary);
     } else {
-      buildMonthlyReportCsv(res, { month, year }, normalized);
+      buildMonthlyReportCsv(res, period, normalized);
     }
   } catch (e) { next(e); }
 });

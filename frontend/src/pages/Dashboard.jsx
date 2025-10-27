@@ -3,14 +3,14 @@ import { useQuery } from 'react-query';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import { useTheme } from '../context/ThemeContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip as ChartTooltip, Legend, ArcElement, BarElement } from 'chart.js';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfToday, endOfToday, subDays, startOfWeek, endOfWeek, startOfYesterday, endOfYesterday } from 'date-fns';
 import client from '../api/client';
 import Button from '../components/Button';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Input from '../components/Input';
 import { fmtCurrency } from '../utils/format';
-import { FaCalendar, FaChartBar, FaChartLine, FaChartPie, FaFileCsv, FaFilePdf, FaMoneyBillWave } from 'react-icons/fa';
+import { FaCalendar, FaChartBar, FaChartLine, FaChartPie, FaFileCsv, FaFilePdf, FaMoneyBillWave, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import StatCard from '../components/dashboard/StatCard';
 import ChartWrapper from '../components/dashboard/ChartWrapper';
 import TransactionList from '../components/dashboard/TransactionList';
@@ -39,6 +39,14 @@ export default function Dashboard() {
   const chartOptions = (title) => ({
     responsive: true,
     maintainAspectRatio: false,
+    onHover: (event, chartElement) => {
+      const chartArea = event.native.target;
+      if (chartElement.length) {
+        chartArea.style.cursor = 'pointer';
+      } else {
+        chartArea.style.cursor = 'default';
+      }
+    },
     plugins: {
       legend: { position: 'bottom', labels: { color: theme === 'dark' ? '#E2E8F0' : '#475569' } },
       title: { display: false }
@@ -58,29 +66,40 @@ export default function Dashboard() {
       backgroundColor: 'rgba(59, 130, 246, 0.2)',
       borderColor: '#3B82F6',
       tension: 0.3,
+      hoverRadius: 8,
     }],
   };
 
   const pieChartData = {
     labels: summaryData?.byCategory?.map(c => c.name) || [],
-    datasets: [{ data: summaryData?.byCategory?.map(c => c.amount) || [], backgroundColor: COLORS }],
+    datasets: [{
+      data: summaryData?.byCategory?.map(c => c.amount) || [],
+      backgroundColor: COLORS,
+      hoverBorderColor: theme === 'dark' ? '#FFF' : '#475569',
+      hoverBorderWidth: 2,
+    }],
   };
 
   const barChartData = {
     labels: summaryData?.byCard?.map(c => c.name) || [],
-    datasets: [{ label: 'Gasto', data: summaryData?.byCard?.map(c => c.amount) || [], backgroundColor: COLORS[1] }],
+    datasets: [{
+      label: 'Gasto',
+      data: summaryData?.byCard?.map(c => c.amount) || [],
+      backgroundColor: COLORS[1],
+      hoverBackgroundColor: '#059669'
+    }],
   };
 
   const handleExport = async (format) => {
-    const year = startDate.getFullYear();
-    const month = startDate.getMonth() + 1;
-    const url = `/reports/monthly?month=${month}&year=${year}&format=${format}`;
+    const url = `/reports/monthly?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&format=${format}`;
     try {
       const response = await client.get(url, { responseType: 'blob' });
       const fileURL = URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = fileURL;
-      link.download = `relatorio_${year}_${month}.${format}`;
+      const startStr = startDate.toLocaleDateString('pt-BR');
+      const endStr = endDate.toLocaleDateString('pt-BR');
+      link.download = `relatorio_${startStr}_a_${endStr}.${format}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -93,24 +112,35 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-            <DatePicker
-              selected={startDate}
-              onChange={(date) => setStartDate(date)}
-              customInput={<Input />}
-              dateFormat="dd/MM/yyyy"
-            />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Período:</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfToday()); setEndDate(endOfToday()); }}><FaClock className="mr-2" /> Hoje</Button>
+              <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfYesterday()); setEndDate(endOfYesterday()); }}><FaCalendarAlt className="mr-2" /> Ontem</Button>
+              <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfWeek(new Date())); setEndDate(endOfWeek(new Date())); }}><FaCalendarAlt className="mr-2" /> Esta Semana</Button>
+              <Button size="sm" variant="outline" onClick={() => { setStartDate(startOfMonth(new Date())); setEndDate(endOfMonth(new Date())); }}><FaCalendarAlt className="mr-2" /> Este Mês</Button>
+            </div>
           </div>
-          <div className="relative">
-            <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-            <DatePicker
-              selected={endDate}
-              onChange={(date) => setEndDate(date)}
-              customInput={<Input />}
-              dateFormat="dd/MM/yyyy"
-            />
+          <div className="flex items-center gap-4 pt-0 sm:pt-7">
+            <div className="relative">
+              <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+              <DatePicker
+                selected={startDate}
+                onChange={(date) => setStartDate(date)}
+                customInput={<Input />}
+                dateFormat="dd/MM/yyyy"
+              />
+            </div>
+            <div className="relative">
+              <FaCalendar className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+              <DatePicker
+                selected={endDate}
+                onChange={(date) => setEndDate(date)}
+                customInput={<Input />}
+                dateFormat="dd/MM/yyyy"
+              />
+            </div>
           </div>
         </div>
         <div className="flex gap-2">

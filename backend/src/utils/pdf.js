@@ -12,13 +12,13 @@ async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
   });
 
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="relatorio_${period.year}_${String(period.month).padStart(2, '0')}.pdf"`);
+  res.setHeader('Content-Disposition', `attachment; filename="relatorio_${period.start}_a_${period.end}.pdf"`);
   doc.pipe(res);
 
-  doc.fontSize(18).text('Relatório Mensal de Gastos', { align: 'center' });
+  doc.fontSize(18).text('Relatório de Gastos', { align: 'center' });
   doc.moveDown(0.5);
   doc.fontSize(12).text(`Usuário: ${user.name} (${user.email})`);
-  doc.text(`Período: ${String(period.month).padStart(2, '0')}/${period.year}`);
+  doc.text(`Período: de ${period.start} a ${period.end}`);
   doc.text(`Gerado em: ${new Date().toLocaleString()}`);
   doc.moveDown();
 

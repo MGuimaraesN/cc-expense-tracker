@@ -1,6 +1,6 @@
 import React from 'react';
 import Card from '../Card';
-import { FaChartBar, FaExclamationTriangle } from 'react-icons/fa';
+import { FaChartBar, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
 
 const ErrorDisplay = ({ message }) => (
   <div className="flex flex-col items-center justify-center h-full text-red-500">
@@ -19,9 +19,9 @@ const ChartWrapper = ({ title, loading, data, error, children, icon }) => (
       {loading ? <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div> :
         error ? <ErrorDisplay /> :
           data && data.length > 0 ? children :
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              <FaChartBar className="mx-auto text-4xl mb-2" />
-              <p>Sem dados para o período selecionado.</p>
+            <div className="flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400 h-full">
+              <FaInfoCircle className="text-4xl mb-2" />
+              <p>Nenhuma informação encontrada para o período selecionado.</p>
             </div>}
     </div>
   </Card>
