@@ -1,6 +1,6 @@
-version: "3.8"
 services:
-  backend:
+  api:
+    container_name: api
     build: ./backend
     ports:
       - "4000:4000"
@@ -17,9 +17,10 @@ services:
                     npx prisma db seed && 
                     echo '--- Iniciando Aplicação ---' && 
                     node src/index.js"
-  frontend:
+  web:
+    container_name: web
     build: ./frontend
     ports:
       - "5173:80"
     depends_on:
-      - backend
+      - api

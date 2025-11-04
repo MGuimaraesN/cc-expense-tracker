@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './client';
 
 export const getRecurringTransactions = () => api.get('/recurring-transactions');
 export const createRecurringTransaction = (data) => api.post('/recurring-transactions', data);
