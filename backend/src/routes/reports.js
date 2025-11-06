@@ -35,12 +35,28 @@ router.get('/reports/monthly', async (req, res, next) => {
       cardName: t.card?.name || null
     }));
 
-    const totals = { total: normalized.reduce((s, t) => s + t.amount, 0) };
+    const total = txs.reduce((sum, t) => sum + t.amount, 0);
+    const byCategory = {};
+    txs.forEach(t => {
+      const key = t.category?.name || 'Sem categoria';
+      byCategory[key] = (byCategory[key] || 0) + t.amount;
+    });
+    const byCard = {};
+    txs.forEach(t => {
+      const key = t.card?.name || 'Sem cartão';
+      byCard[key] = (byCard[key] || 0) + t.amount;
+    });
+
+    const summary = {
+      total,
+      byCategory: Object.entries(byCategory).map(([name, amount]) => ({ name, amount })),
+      byCard: Object.entries(byCard).map(([name, amount]) => ({ name, amount })),
+    };
 
     if (format === 'pdf') {
-      return buildMonthlyReportPdf(res, user, { month, year }, normalized, totals);
+      buildMonthlyReportPdf(res, user, { month, year }, normalized, summary);
     } else {
-      return buildMonthlyReportCsv(res, { month, year }, normalized);
+      buildMonthlyReportCsv(res, { month, year }, normalized);
     }
   } catch (e) { next(e); }
 });
