@@ -1,20 +1,29 @@
 const PDFDocument = require('pdfkit');
 
-async function buildMonthlyReportPdf(res, user, period, transactions, totals) {
-  const doc = new PDFDocument({ margin: 40 });
+async function buildMonthlyReportPdf(res, user, period, transactions, summary) {
+  const doc = new PDFDocument({
+    margin: 40,
+    bufferPages: true,
+  });
+
+  // Header
+  doc.on('pageAdded', () => {
+    doc.fontSize(10).text('Relatório Mensal de Gastos', { align: 'center' });
+  });
+
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="relatorio_${period.year}_${String(period.month).padStart(2,'0')}.pdf"`);
+  res.setHeader('Content-Disposition', `attachment; filename="relatorio_${period.start}_a_${period.end}.pdf"`);
   doc.pipe(res);
 
-  doc.fontSize(18).text('Relatório Mensal de Gastos', { align: 'center' });
+  doc.fontSize(18).text('Relatório de Gastos', { align: 'center' });
   doc.moveDown(0.5);
   doc.fontSize(12).text(`Usuário: ${user.name} (${user.email})`);
-  doc.text(`Período: ${String(period.month).padStart(2,'0')}/${period.year}`);
+  doc.text(`Período: de ${period.start} a ${period.end}`);
   doc.text(`Gerado em: ${new Date().toLocaleString()}`);
   doc.moveDown();
 
   doc.fontSize(14).text('Resumo', { underline: true });
-  doc.fontSize(12).text(`Total do mês: R$ ${totals.total.toFixed(2)}`);
+  doc.fontSize(12).text(`Total do mês: R$ ${summary.total.toFixed(2)}`);
   doc.moveDown();
 
   doc.fontSize(14).text('Transações', { underline: true });
@@ -37,6 +46,13 @@ async function buildMonthlyReportPdf(res, user, period, transactions, totals) {
     doc.text(catCard, col[2]);
     doc.text(t.amount.toFixed(2), col[3], undefined, { align: 'right' });
   });
+
+  // Footer
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i <= range.count - 1; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(8).text(`Página ${i + 1} de ${range.count}`, 40, doc.page.height - 30, { align: 'center' });
+  }
 
   doc.end();
 }

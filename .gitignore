@@ -1,0 +1,12 @@
+# Dependency directories
+node_modules/
+
+# Logs
+*.log
+
+# Local development
+.env.local
+.env.*.local
+dist/
+jules-scratch/
+test-results/

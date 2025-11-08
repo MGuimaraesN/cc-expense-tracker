@@ -62,13 +62,26 @@ async function main() {
     ]
   });
 
-  await prisma.budget.createMany({
-    data: [
-      { userId: user.id, categoryId: alimentacao.id, month: month + 1, year, amount: 600 },
-      { userId: user.id, categoryId: transporte.id, month: month + 1, year, amount: 300 },
-      { userId: user.id, categoryId: lazer.id, month: month + 1, year, amount: 200 }
-    ]
-  });
+  const budgets = [
+    { userId: user.id, categoryId: alimentacao.id, month: month + 1, year, amount: 600 },
+    { userId: user.id, categoryId: transporte.id, month: month + 1, year, amount: 300 },
+    { userId: user.id, categoryId: lazer.id, month: month + 1, year, amount: 200 },
+  ];
+
+  for (const budget of budgets) {
+    await prisma.budget.upsert({
+      where: {
+        userId_categoryId_month_year: {
+          userId: budget.userId,
+          categoryId: budget.categoryId,
+          month: budget.month,
+          year: budget.year,
+        },
+      },
+      update: { amount: budget.amount },
+      create: budget,
+    });
+  }
 
   console.log('Seed concluído. User: user@example.com / secret123');
 }

@@ -1,6 +1,6 @@
-version: "3.8"
 services:
-  backend:
+  api:
+    container_name: api
     build: ./backend
     ports:
       - "4000:4000"
@@ -9,17 +9,25 @@ services:
       - JWT_SECRET=supersecretjwt
       - DATABASE_URL=file:./prisma/dev.db
       - CORS_ORIGIN=http://localhost:5173
+      - NODE_ENV=development
     volumes:
       - ./backend/prisma:/app/prisma
+      - ./backend/src:/app/src
     command: sh -c "echo '--- Sincronizando Schema (db push) ---' && 
                     npx prisma db push --accept-data-loss && 
                     echo '--- Populando Banco (db seed) ---' && 
                     npx prisma db seed && 
-                    echo '--- Iniciando Aplicação ---' && 
-                    node src/index.js"
-  frontend:
-    build: ./frontend
+                    echo '--- Iniciando Aplicação (DEV) ---' &&
+                    npm run dev"
+  web:
+    container_name: web
+    build:
+      context: ./frontend
+      target: development
     ports:
-      - "5173:80"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
-      - backend
+      - api

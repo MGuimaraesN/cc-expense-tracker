@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const prisma = require('../prisma');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -20,6 +21,25 @@ router.post('/auth/register',
       const passwordHash = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({ data: { name, email, passwordHash } });
       res.json({ id: user.id, name: user.name, email: user.email });
+    } catch (e) { next(e); }
+  }
+);
+
+router.put('/auth/change-password',
+  auth,
+  body('oldPassword').notEmpty(),
+  body('newPassword').isLength({ min: 6 }),
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+      const { oldPassword, newPassword } = req.body;
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+      const ok = await bcrypt.compare(oldPassword, user.passwordHash);
+      if (!ok) return res.status(400).json({ error: 'Senha antiga inválida' });
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await prisma.user.update({ where: { id: req.user.id }, data: { passwordHash } });
+      res.json({ message: 'Senha alterada com sucesso' });
     } catch (e) { next(e); }
   }
 );

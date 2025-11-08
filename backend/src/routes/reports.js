@@ -9,13 +9,12 @@ router.use(auth);
 
 router.get('/reports/monthly', async (req, res, next) => {
   try {
-    const month = Number(req.query.month);
-    const year = Number(req.query.year);
+    const { startDate, endDate } = req.query;
     const format = (req.query.format || 'csv').toLowerCase();
-    if (!month || !year) return res.status(400).json({ error: 'Informe month e year' });
+    if (!startDate || !endDate) return res.status(400).json({ error: 'Informe startDate e endDate' });
 
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
     const [user, txs] = await Promise.all([
       prisma.user.findUnique({ where: { id: req.user.id } }),
@@ -35,12 +34,33 @@ router.get('/reports/monthly', async (req, res, next) => {
       cardName: t.card?.name || null
     }));
 
-    const totals = { total: normalized.reduce((s, t) => s + t.amount, 0) };
+    const total = txs.reduce((sum, t) => sum + t.amount, 0);
+    const byCategory = {};
+    txs.forEach(t => {
+      const key = t.category?.name || 'Sem categoria';
+      byCategory[key] = (byCategory[key] || 0) + t.amount;
+    });
+    const byCard = {};
+    txs.forEach(t => {
+      const key = t.card?.name || 'Sem cartão';
+      byCard[key] = (byCard[key] || 0) + t.amount;
+    });
+
+    const summary = {
+      total,
+      byCategory: Object.entries(byCategory).map(([name, amount]) => ({ name, amount })),
+      byCard: Object.entries(byCard).map(([name, amount]) => ({ name, amount })),
+    };
+
+    const period = {
+      start: start.toLocaleDateString('pt-BR'),
+      end: end.toLocaleDateString('pt-BR'),
+    };
 
     if (format === 'pdf') {
-      return buildMonthlyReportPdf(res, user, { month, year }, normalized, totals);
+      buildMonthlyReportPdf(res, user, period, normalized, summary);
     } else {
-      return buildMonthlyReportCsv(res, { month, year }, normalized);
+      buildMonthlyReportCsv(res, period, normalized);
     }
   } catch (e) { next(e); }
 });

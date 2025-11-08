@@ -14,6 +14,7 @@ const budgetsRoutes = require('./routes/budgets');
 const summaryRoutes = require('./routes/summary');
 const reportsRoutes = require('./routes/reports');
 const recurringTransactionsRoutes = require('./routes/recurring-transactions');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -33,6 +34,7 @@ app.use('/api', budgetsRoutes);
 app.use('/api', summaryRoutes);
 app.use('/api', reportsRoutes);
 app.use('/api', recurringTransactionsRoutes);
+app.use('/api', adminRoutes);
 
 app.use(errorHandler);
 
