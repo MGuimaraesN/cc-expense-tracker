@@ -4,6 +4,7 @@ dotenv.config();
 import express, { Express } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 
 // Keep these as ES6 imports
 import errorHandler from './middleware/error';
@@ -28,6 +29,7 @@ const ORIGIN: string = process.env.CORS_ORIGIN || '*';
 app.use(cors({ origin: ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
+app.use(cookieParser());
 
 app.use('/api', healthRoutes);
 app.use('/api', docsRoutes);

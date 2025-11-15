@@ -1,64 +1,54 @@
-import { Button } from "@/components/ui/button";
+'use client';
+
+import useSWR from 'swr';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DollarSign, PlusCircle, TrendingUp, TrendingDown } from "lucide-react";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { CategoryChart } from "@/components/dashboard/CategoryChart";
+import { RecentTransactionsList } from "@/components/dashboard/RecentTransactionsList";
+import { BudgetsStatusList } from "@/components/dashboard/BudgetsStatusList";
+import { NewTransactionModal } from "@/components/dashboard/NewTransactionModal";
+import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function DashboardPage() {
+  const { data: summary, error, mutate } = useSWR('/api/summary', fetcher);
+
+  if (error) return <div className="text-red-500">Falha ao carregar os dados.</div>;
+  if (!summary) return <div>Carregando...</div>;
+
+  const chartData = summary.byCategory.map((item: any) => ({
+    name: item.name,
+    total: item.amount,
+  }));
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Nova Transação
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova Transação</DialogTitle>
-              <DialogDescription>
-                Adicione uma nova receita ou despesa.
-              </DialogDescription>
-            </DialogHeader>
-            {/* Formulário de Nova Transação Virá Aqui */}
-            <p>Formulário...</p>
-          </DialogContent>
-        </Dialog>
+        <NewTransactionModal onSave={mutate} />
       </div>
 
       {/* Cards de Estatísticas */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balanço</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 4.879,30</div>
-            <p className="text-xs text-muted-foreground">Saldo atual</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receitas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">+ R$ 5.000,00</div>
-            <p className="text-xs text-muted-foreground">no último mês</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Despesas</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">- R$ 120,70</div>
-            <p className="text-xs text-muted-foreground">no último mês</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Balanço"
+          value={`R$ ${summary.balance.toFixed(2)}`}
+          icon={Wallet}
+          description="Saldo atual"
+        />
+        <StatCard
+          title="Receitas"
+          value={`+ R$ ${summary.totalIncomes.toFixed(2)}`}
+          icon={TrendingUp}
+          description="no último mês"
+        />
+        <StatCard
+          title="Despesas"
+          value={`- R$ ${summary.totalExpenses.toFixed(2)}`}
+          icon={TrendingDown}
+          description="no último mês"
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -68,10 +58,7 @@ export default function DashboardPage() {
             <CardTitle>Despesas por Categoria</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            {/* Gráfico Virá Aqui */}
-            <div className="h-[350px] w-full flex items-center justify-center bg-secondary rounded-lg">
-              <p>Gráfico</p>
-            </div>
+            <CategoryChart data={chartData} />
           </CardContent>
         </Card>
 
@@ -80,12 +67,11 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Transações Recentes</CardTitle>
             <CardDescription>
-              Você fez 5 transações este mês.
+              Suas últimas {summary.recentTransactions.length} transações.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Lista de Transações Virá Aqui */}
-            <p>Lista de transações...</p>
+            <RecentTransactionsList transactions={summary.recentTransactions} />
           </CardContent>
         </Card>
       </div>
@@ -99,8 +85,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Lista de Orçamentos Virá Aqui */}
-            <p>Lista de orçamentos...</p>
+            <BudgetsStatusList budgets={summary.budgetStatus} />
           </CardContent>
         </Card>
     </div>

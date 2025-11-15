@@ -4,49 +4,47 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('Iniciando o processo de seed...');
+
+  // Limpeza completa para garantir um estado limpo
+  await prisma.transaction.deleteMany({});
+  await prisma.splitTransaction.deleteMany({});
+  await prisma.recurringTransaction.deleteMany({});
+  await prisma.budget.deleteMany({});
+  await prisma.card.deleteMany({});
+  await prisma.category.deleteMany({});
+  await prisma.user.deleteMany({});
+  console.log('Banco de dados limpo.');
+
   const passwordHash = await bcrypt.hash('secret123', 10);
 
-  const user = await prisma.user.upsert({
-    where: { email: 'user@example.com' },
-    update: {},
-    create: {
+  const user = await prisma.user.create({
+    data: {
       name: 'Usuário Padrão',
       email: 'user@example.com',
       passwordHash,
     },
   });
 
-  console.log('Usuário criado/encontrado:', user.email);
+  console.log('Usuário criado:', user.email);
 
-  const alimentacao = await prisma.category.upsert({
-    where: { userId_name: { userId: user.id, name: 'Alimentação' } },
-    update: {},
-    create: { userId: user.id, name: 'Alimentação', type: TransactionType.EXPENSE },
+  const alimentacao = await prisma.category.create({
+    data: { userId: user.id, name: 'Alimentação', type: TransactionType.EXPENSE },
   });
 
-  const transporte = await prisma.category.upsert({
-    where: { userId_name: { userId: user.id, name: 'Transporte' } },
-    update: {},
-    create: { userId: user.id, name: 'Transporte', type: TransactionType.EXPENSE },
+  const transporte = await prisma.category.create({
+    data: { userId: user.id, name: 'Transporte', type: TransactionType.EXPENSE },
   });
 
-  const lazer = await prisma.category.upsert({
-    where: { userId_name: { userId: user.id, name: 'Lazer' } },
-    update: {},
-    create: { userId: user.id, name: 'Lazer', type: TransactionType.EXPENSE },
+  const lazer = await prisma.category.create({
+    data: { userId: user.id, name: 'Lazer', type: TransactionType.EXPENSE },
   });
 
-  const salario = await prisma.category.upsert({
-    where: { userId_name: { userId: user.id, name: 'Salário' } },
-    update: {},
-    create: { userId: user.id, name: 'Salário', type: TransactionType.INCOME },
+  const salario = await prisma.category.create({
+    data: { userId: user.id, name: 'Salário', type: TransactionType.INCOME },
   });
 
-  console.log('Categorias criadas/encontradas.');
-
-  // Clean up old cards and transactions to ensure a fresh start
-  await prisma.transaction.deleteMany({ where: { userId: user.id } });
-  await prisma.card.deleteMany({ where: { userId: user.id } });
+  console.log('Categorias criadas.');
 
   const [nubank, visa] = await Promise.all([
     prisma.card.create({ data: { userId: user.id, name: 'Nubank', limit: 5000, closeDay: 5, dueDay: 15 } }),
@@ -80,17 +78,8 @@ async function main() {
   ];
 
   for (const budget of budgets) {
-    await prisma.budget.upsert({
-      where: {
-        userId_categoryId_month_year: {
-          userId: budget.userId,
-          categoryId: budget.categoryId,
-          month: budget.month,
-          year: budget.year,
-        },
-      },
-      update: { amount: budget.amount },
-      create: budget,
+    await prisma.budget.create({
+      data: budget,
     });
   }
 

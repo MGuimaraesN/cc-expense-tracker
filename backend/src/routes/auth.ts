@@ -82,15 +82,42 @@ router.post('/auth/login',
       }
 
       const token = jwt.sign(
-        { id: user.id, email: user.email, name: user.name },
+        { id: user.id, email: user.email, name: user.name, role: user.role },
         process.env.JWT_SECRET || 'supersecretjwt',
         { expiresIn: '7d' }
       );
-      res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+        path: '/',
+      });
+
+      res.json({ user: { id: user.id, name: user.name, email: user.email } });
     } catch (e) {
       next(e);
     }
   }
 );
+
+// Endpoint to get the current user from the token
+router.get('/auth/me', auth, (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Não autenticado' });
+  }
+  res.json({ user: req.user });
+});
+
+// Endpoint to logout
+router.post('/auth/logout', (req: Request, res: Response) => {
+  res.cookie('token', '', {
+    httpOnly: true,
+    expires: new Date(0),
+    path: '/',
+  });
+  res.status(200).json({ message: 'Logout bem-sucedido' });
+});
 
 module.exports = router;
