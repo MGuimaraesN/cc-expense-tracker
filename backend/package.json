@@ -5,15 +5,15 @@
   "type": "commonjs",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
-    "build": "echo \"JS project - nothing to build\"",
+    "dev": "ts-node-dev --respawn --transpile-only -P ./tsconfig-dev.json src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "seed": "prisma db seed"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
@@ -31,7 +31,18 @@
     "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.1",
+    "@types/pdfkit": "^0.17.3",
+    "@types/swagger-ui-express": "^4.1.8",
     "nodemon": "^3.1.4",
-    "prisma": "^6.18.0"
+    "prisma": "^6.18.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   }
 }

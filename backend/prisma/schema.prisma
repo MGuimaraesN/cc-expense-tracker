@@ -3,8 +3,20 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
 }
 
 model User {
@@ -22,44 +34,49 @@ model User {
 }
 
 model Card {
-  id         Int           @id @default(autoincrement())
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     Int
-  name       String
-  limit      Float         @default(0)
-  closeDay   Int           @default(1)
-  dueDay     Int           @default(10)
-  iconUrl    String?
+  id                    Int                    @id @default(autoincrement())
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                Int
+  name                  String
+  limit                 Float                  @default(0)
+  closeDay              Int                    @default(1)
+  dueDay                Int                    @default(10)
+  iconUrl               String?
   createdAt             DateTime               @default(now())
   transactions          Transaction[]
   recurringTransactions RecurringTransaction[]
+
   @@index([userId, name])
 }
 
 model Category {
-  id         Int           @id @default(autoincrement())
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     Int
-  name       String
+  id                    Int                    @id @default(autoincrement())
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                Int
+  name                  String
+  type                  TransactionType        @default(EXPENSE)
   createdAt             DateTime               @default(now())
   transactions          Transaction[]
   recurringTransactions RecurringTransaction[]
   budgets               Budget[]
   splitTransactions     SplitTransaction[]
+
+  @@unique([userId, name])
   @@index([userId, name])
 }
 
 model Transaction {
-  id               Int       @id @default(autoincrement())
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId           Int
-  card             Card?     @relation(fields: [cardId], references: [id], onDelete: SetNull)
-  cardId           Int?
-  category         Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId       Int?
-  date             DateTime
-  amount           Float
-  description      String?
+  id                     Int                     @id @default(autoincrement())
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                 Int
+  card                   Card?                   @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  cardId                 Int?
+  category               Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId             Int?
+  date                   DateTime
+  amount                 Float
+  description            String?
+  type                   TransactionType         @default(EXPENSE)
   installments           Int                     @default(1)
   installmentIndex       Int                     @default(1)
   createdAt              DateTime                @default(now())
@@ -67,6 +84,7 @@ model Transaction {
   recurringTransactionId Int?
   splits                 SplitTransaction[]
   receiptUrl             String?
+
   @@index([userId, date])
 }
 
@@ -81,32 +99,34 @@ model SplitTransaction {
 }
 
 model Budget {
-  id         Int       @id @default(autoincrement())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     Int
-  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId Int
   month      Int
   year       Int
   amount     Float
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime @default(now())
+
   @@unique([userId, categoryId, month, year])
 }
 
 model RecurringTransaction {
-  id          Int       @id @default(autoincrement())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  card        Card?     @relation(fields: [cardId], references: [id], onDelete: SetNull)
-  cardId      Int?
-  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId  Int?
-  startDate   DateTime
-  endDate     DateTime?
-  amount      Float
-  description String?
-  frequency    String        // e.g., 'daily', 'weekly', 'monthly', 'yearly'
+  id           Int           @id @default(autoincrement())
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  card         Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  cardId       Int?
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId   Int?
+  startDate    DateTime
+  endDate      DateTime?
+  amount       Float
+  description  String?
+  frequency    Frequency
   createdAt    DateTime      @default(now())
   transactions Transaction[]
+
   @@index([userId, startDate])
 }

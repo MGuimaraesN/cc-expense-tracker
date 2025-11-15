@@ -1,33 +1,32 @@
 {
-  "name": "cc-expense-tracker-web",
+  "name": "frontend",
+  "version": "0.1.0",
   "private": true,
-  "version": "1.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --port 5173"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "axios": "^1.7.2",
-    "chart.js": "^4.5.1",
-    "date-fns": "^4.1.0",
-    "jwt-decode": "^4.0.0",
-    "react": "^18.2.0",
-    "react-chartjs-2": "^5.3.0",
-    "react-datepicker": "^8.8.0",
-    "react-dom": "^18.2.0",
-    "react-hook-form": "^7.65.0",
-    "react-icons": "^5.5.0",
-    "react-paginate": "^8.3.0",
-    "react-query": "^3.39.3",
-    "react-router-dom": "^6.26.1"
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.553.0",
+    "next": "14.2.3",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.13",
-    "vite": "^5.4.8"
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
   }
 }
