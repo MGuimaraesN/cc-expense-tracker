@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle } from "lucide-react";
-import { TransactionType } from "@prisma/client"; // Assumindo que os tipos do prisma estão acessíveis
+import { TransactionType } from "@/types";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
