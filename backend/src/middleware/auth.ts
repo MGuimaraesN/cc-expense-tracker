@@ -8,11 +8,13 @@ interface DecodedToken {
 }
 
 const auth = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.cookies.token;
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    return res.status(401).json({ error: 'Token ausente' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token ausente ou mal formatado' });
   }
+
+  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwt') as DecodedToken;
@@ -23,4 +25,4 @@ const auth = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-module.exports = auth;
+export default auth;

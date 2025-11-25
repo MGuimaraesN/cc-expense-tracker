@@ -1,38 +1,32 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import useSWR from 'swr';
+import { createContext, useContext, ReactNode } from 'react';
+import useSWR, { mutate } from 'swr';
+import api from '@/lib/api';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
-// Definindo a interface do usuário
 interface User {
   id: number;
   name: string;
   email: string;
 }
 
-// Definindo a interface para o contexto de autenticação
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (data: any) => Promise<void>;
   register: (data: any) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
 }
 
-// Criando o contexto com um valor padrão undefined
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Função fetcher para o SWR
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (!res.ok) {
-    throw new Error('Usuário não autenticado');
-  }
-  return res.json();
-});
+const fetcher = (url: string) => api.get(url).then(res => res.data);
 
-// Componente Provedor de Autenticação
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { data, error, mutate } = useSWR('/api/auth/me', fetcher, {
+  const router = useRouter();
+  const { data, error } = useSWR('/api/auth/me', fetcher, {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   });
@@ -41,35 +35,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isLoading = !data && !error;
 
   const login = async (credentials: any) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || 'Falha no login');
+    try {
+      const res = await api.post('/api/auth/login', credentials);
+      const { token } = res.data;
+
+      if (!token) {
+        throw new Error('Token não encontrado na resposta');
+      }
+
+      localStorage.setItem('token', token);
+      await mutate('/api/auth/me'); // Revalidate user session
+      toast.success('Login bem-sucedido!');
+      router.push('/dashboard');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || 'Falha no login';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     }
-    await mutate(); // Revalida a sessão (chama /api/auth/me novamente)
   };
 
   const register = async (userData: any) => {
-    const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Falha no registro');
-      }
-      // Opcional: fazer login automaticamente após o registro
+    try {
+      await api.post('/api/auth/register', userData);
+      toast.success('Registro bem-sucedido! Fazendo login...');
+      // Automatically log in after registration
       await login({ email: userData.email, password: userData.password });
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || 'Falha no registro';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
-  const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    await mutate(undefined, false); // Limpa o cache do usuário sem revalidar
+  const logout = () => {
+    localStorage.removeItem('token');
+    mutate('/api/auth/me', undefined, false); // Clear user cache
+    toast.info('Você foi desconectado.');
+    router.push('/login');
   };
 
   return (
@@ -79,11 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook customizado para usar o contexto de autenticação
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

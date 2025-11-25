@@ -1,8 +1,8 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Router, Request, Response } from 'express';
 const router: Router = express.Router();
 
 router.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json({ status: 'UP' });
 });
 
-module.exports = router;
+export default router;
