@@ -2,38 +2,41 @@ import express, { Router, Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../prisma';
 import auth from '../middleware/auth';
+import { TransactionType } from '@prisma/client';
 
 const router: Router = express.Router();
+
+// All routes in this file are protected
 router.use(auth);
 
 // GET /categories
-router.get('/categories', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const items = await prisma.category.findMany({
+    const categories = await prisma.category.findMany({
       where: { userId: req.user!.id },
       orderBy: { name: 'asc' },
     });
-    res.json(items);
+    res.json(categories);
   } catch (e) {
     next(e);
   }
 });
 
 // POST /categories
-router.post('/categories',
-  body('name').notEmpty(),
-  body('type').isIn(['INCOME', 'EXPENSE']), // Assuming type is required from the frontend
+router.post('/',
+  body('name').notEmpty().withMessage('Nome é obrigatório'),
+  body('type').isIn([TransactionType.INCOME, TransactionType.EXPENSE]).withMessage('Tipo de transação inválido'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      const { name, type } = req.body; // Assuming type is sent
-      const item = await prisma.category.create({
+      const { name, type } = req.body;
+      const category = await prisma.category.create({
         data: { userId: req.user!.id, name, type },
       });
-      res.status(201).json(item);
+      res.status(201).json(category);
     } catch (e) {
       next(e);
     }
@@ -41,20 +44,25 @@ router.post('/categories',
 );
 
 // PUT /categories/:id
-router.put('/categories/:id',
-  body('name').notEmpty(),
+router.put('/:id',
+  body('name').notEmpty().withMessage('Nome é obrigatório'),
+  body('type').optional().isIn([TransactionType.INCOME, TransactionType.EXPENSE]).withMessage('Tipo de transação inválido'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = Number(req.params.id);
-      const existing = await prisma.category.findFirst({ where: { id, userId: req.user!.id } });
-      if (!existing) {
-        return res.status(404).json({ error: 'Categoria não encontrada' });
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
-      const updated = await prisma.category.update({
-        where: { id },
-        data: { name: req.body.name },
+      const id = parseInt(req.params.id);
+      const category = await prisma.category.updateMany({
+        where: { id, userId: req.user!.id },
+        data: req.body,
       });
-      res.json(updated);
+
+      if (category.count === 0) {
+        return res.status(404).json({ error: 'Categoria não encontrada ou não pertence ao usuário' });
+      }
+      res.json({ message: 'Categoria atualizada com sucesso' });
     } catch (e) {
       next(e);
     }
@@ -62,18 +70,20 @@ router.put('/categories/:id',
 );
 
 // DELETE /categories/:id
-router.delete('/categories/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = Number(req.params.id);
-    const existing = await prisma.category.findFirst({ where: { id, userId: req.user!.id } });
-    if (!existing) {
-      return res.status(404).json({ error: 'Categoria não encontrada' });
+    const id = parseInt(req.params.id);
+    const category = await prisma.category.deleteMany({
+      where: { id, userId: req.user!.id },
+    });
+
+    if (category.count === 0) {
+      return res.status(404).json({ error: 'Categoria não encontrada ou não pertence ao usuário' });
     }
-    await prisma.category.delete({ where: { id } });
-    res.json({ success: true });
+    res.status(204).send();
   } catch (e) {
     next(e);
   }
 });
 
-module.exports = router;
+export default router;

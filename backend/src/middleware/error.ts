@@ -10,4 +10,4 @@ const errorHandler = (err: AppError, req: Request, res: Response, next: NextFunc
   res.status(status).json({ error: err.message || 'Erro interno do servidor' });
 };
 
-module.exports = errorHandler;
+export default errorHandler;

@@ -54,27 +54,38 @@ async function main() {
   console.log('Cartões criados.');
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const mk = (d: number) => new Date(year, month, d);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  // Helper to create dates in the current month
+  const mkCurrent = (d: number) => new Date(currentYear, currentMonth, d);
+
+  // Helper to create dates in the previous month
+  const mkPrevious = (d: number) => new Date(currentYear, currentMonth - 1, d);
 
   await prisma.transaction.createMany({
     data: [
-      { userId: user.id, type: TransactionType.EXPENSE, cardId: nubank.id, categoryId: alimentacao.id, date: mk(2), amount: 120.50, description: 'Supermercado' },
-      { userId: user.id, type: TransactionType.EXPENSE, cardId: nubank.id, categoryId: transporte.id, date: mk(3), amount: 45.90, description: 'Uber' },
-      { userId: user.id, type: TransactionType.EXPENSE, cardId: visa.id, categoryId: lazer.id, date: mk(5), amount: 80.00, description: 'Cinema' },
-      { userId: user.id, type: TransactionType.EXPENSE, cardId: visa.id, categoryId: alimentacao.id, date: mk(10), amount: 60.00, description: 'Almoço' },
-      { userId: user.id, type: TransactionType.EXPENSE, cardId: nubank.id, categoryId: transporte.id, date: mk(12), amount: 30.00, description: 'Combustível' },
-      { userId: user.id, type: TransactionType.INCOME, categoryId: salario.id, date: mk(1), amount: 5000, description: 'Salário Mensal' },
+      // Current Month Transactions
+      { userId: user.id, type: TransactionType.EXPENSE, cardId: nubank.id, categoryId: alimentacao.id, date: mkCurrent(2), amount: 120.50, description: 'Supermercado' },
+      { userId: user.id, type: TransactionType.EXPENSE, cardId: nubank.id, categoryId: transporte.id, date: mkCurrent(3), amount: 45.90, description: 'Uber' },
+      { userId: user.id, type: TransactionType.EXPENSE, cardId: visa.id, categoryId: lazer.id, date: mkCurrent(5), amount: 80.00, description: 'Cinema' },
+      { userId: user.id, type: TransactionType.EXPENSE, cardId: visa.id, categoryId: alimentacao.id, date: mkCurrent(10), amount: 60.00, description: 'Almoço' },
+      { userId: user.id, type: TransactionType.EXPENSE, cardId: nubank.id, categoryId: transporte.id, date: mkCurrent(12), amount: 30.00, description: 'Combustível' },
+      { userId: user.id, type: TransactionType.INCOME, categoryId: salario.id, date: mkCurrent(1), amount: 5000, description: 'Salário Mensal' },
+
+      // Previous Month Transactions
+      { userId: user.id, type: TransactionType.EXPENSE, cardId: nubank.id, categoryId: alimentacao.id, date: mkPrevious(15), amount: 150.75, description: 'Compras do mês' },
+      { userId: user.id, type: TransactionType.EXPENSE, cardId: visa.id, categoryId: lazer.id, date: mkPrevious(20), amount: 250.00, description: 'Show' },
+      { userId: user.id, type: TransactionType.INCOME, categoryId: salario.id, date: mkPrevious(1), amount: 5000, description: 'Salário Mensal' },
     ]
   });
 
   console.log('Transações criadas.');
 
   const budgets = [
-    { userId: user.id, categoryId: alimentacao.id, month: month + 1, year, amount: 600 },
-    { userId: user.id, categoryId: transporte.id, month: month + 1, year, amount: 300 },
-    { userId: user.id, categoryId: lazer.id, month: month + 1, year, amount: 200 },
+    { userId: user.id, categoryId: alimentacao.id, month: currentMonth + 1, year: currentYear, amount: 600 },
+    { userId: user.id, categoryId: transporte.id, month: currentMonth + 1, year: currentYear, amount: 300 },
+    { userId: user.id, categoryId: lazer.id, month: currentMonth + 1, year: currentYear, amount: 200 },
   ];
 
   for (const budget of budgets) {
